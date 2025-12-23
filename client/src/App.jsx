@@ -2,7 +2,7 @@ function App() {
 
   return (
     <>
-      <h1>This is Mindsettler</h1>
+      <h1 className="border">This is Mindsettler</h1>
     </>
   )
 }
