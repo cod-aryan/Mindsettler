@@ -12,8 +12,11 @@ app.use(bodyParser.urlencoded({ extended: true })); // Handles URL-encoded data 
 app.use(morgan('dev')); // It automatically logs every incoming HTTP request to your terminal console so you can see what is happening in real-time
 
 
+// Basic route to check if server is running
+import userRoute from "./routes/userRoute.js";
+app.use("/api/user", userRoute);
+
 app.get("/", (req, res) => {
-  console.log("ES Module Backend Running");
   res.send("ES Module Backend Running");
 });
 
