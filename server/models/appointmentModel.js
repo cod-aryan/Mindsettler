@@ -1,48 +1,44 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const appointmentSchema = new mongoose.Schema({
+const appointmentSchema = new mongoose.Schema(
+  {
     // Link to the user who is booking
-    user: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User', 
-        required: true 
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-    // Mandatory session types from problem statement
-    sessionType: { 
-        type: String, 
-        enum: ['Online', 'Offline'], 
-        required: true 
+    consultant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null, // Remains null until an admin accepts/is assigned
     },
-    // Appointment date and time slot
-    date: { 
-        type: Date, 
-        required: true 
-    },
-    timeSlot: { 
-        type: String, 
-        required: true 
-    },
+    sessionType: { type: String, enum: ["Online", "Offline"], required: true },
+    date: { type: Date, required: true },
+    timeSlot: { type: String, required: true },
     // Strictly mandated 60-minute duration
-    duration: { 
-        type: Number, 
-        default: 60 
+    duration: {
+      type: Number,
+      default: 60,
     },
     // Backend-controlled appointment status
-    status: { 
-        type: String, 
-        enum: ['Pending', 'Confirmed', 'Rejected'], 
-        default: 'Pending' 
+    status: {
+      type: String,
+      enum: ["Pending", "Confirmed", "Rejected"],
+      default: "Pending",
     },
     // Manual payment tracking as there is no gateway
-    paymentMethod: { 
-        type: String, 
-        enum: ['UPI', 'Cash'], 
-        required: true 
+    paymentMethod: {
+      type: String,
+      enum: ["UPI", "Cash"],
+      required: true,
     },
-    isPaid: { 
-        type: Boolean, 
-        default: false 
-    }
-}, { timestamps: true }); // Tracks when booking was created
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+); // Tracks when booking was created
 
-export default mongoose.model('Appointment', appointmentSchema);
+export default mongoose.model("Appointment", appointmentSchema);

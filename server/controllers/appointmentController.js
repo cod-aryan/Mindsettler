@@ -44,30 +44,16 @@ export const getMyAppointments = async (req, res) => {
 // @access  Private/Admin
 export const updateStatus = async (req, res) => {
     try {
-        const { status, isPaid } = req.body;
-
-        // Validation for status enum 
-        if (!['Confirmed', 'Rejected'].includes(status)) {
-            return res.status(400).json({ message: 'Invalid status update' });
-        }
-        
+        const { status, consultantId } = req.body;
         const appointment = await Appointment.findById(req.params.id);
-
-        if (!appointment) {
-            return res.status(404).json({ message: 'Appointment not found' });
-        }
-
-        // Update fields [cite: 50, 52]
+        if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+        // Admin approves and assigns a consultant
         appointment.status = status;
-        if (isPaid !== undefined) appointment.isPaid = isPaid;
-
+        if (consultantId) {
+            appointment.consultant = consultantId;
+        }
         await appointment.save();
-
-        res.status(200).json({
-            success: true,
-            message: `Appointment marked as ${status}`,
-            data: appointment
-        });
+        res.status(200).json({ success: true, data: appointment });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
