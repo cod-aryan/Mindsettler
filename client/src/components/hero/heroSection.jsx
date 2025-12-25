@@ -2,8 +2,25 @@ import React from "react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import HeroImage from "../../assets/images/HeroImage.jpeg";
+import { useMotionValue, useSpring, useTransform } from "framer-motion";
 
 const HeroSection = () => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Smooth out the mouse movement
+  const springX = useSpring(mouseX, { stiffness: 100, damping: 30 });
+  const springY = useSpring(mouseY, { stiffness: 100, damping: 30 });
+
+  // Map mouse movement to pixels (e.g., move image 20px in opposite direction)
+  const moveX = useTransform(springX, [0, window.innerWidth], [10, -10]);
+  const moveY = useTransform(springY, [0, window.innerHeight], [10, -10]);
+
+  const handleMouseMove = (e) => {
+    mouseX.set(e.clientX);
+    mouseY.set(e.clientY);
+  };
+
   // Animation variants for staggered text
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -26,13 +43,14 @@ const HeroSection = () => {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden flex items-center font-serif">
+    <div onMouseMove={handleMouseMove} className="relative h-screen w-full overflow-hidden flex items-center font-serif">
       {/* Background Image with Parallax Effect */}
       <motion.div
-        initial={{ scale: 1.1 }}
-        animate={{ scale: 1 }}
+        initial={{ scale: 1.5 }}
+        animate={{ scale: 1.1 }}
         transition={{ duration: 10, ease: "linear" }}
         className="absolute inset-0 z-0"
+        style={{ x: moveX, y: moveY, scale: 1.05 }} // Scale up slightly so edges don't show
       >
         <img
           src={HeroImage}
@@ -87,7 +105,7 @@ const HeroSection = () => {
             className="group relative px-8 py-3 bg-white/20 backdrop-blur-md border border-white/40 rounded-full text-white font-semibold uppercase tracking-widest overflow-hidden transition-all"
           >
             <span className="relative z-10 flex items-center gap-2">
-              Explore Now
+              Get Started
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </span>
             {/* Glossy shine effect animation */}
