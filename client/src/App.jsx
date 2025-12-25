@@ -4,7 +4,7 @@ import PageNotFound from './pages/404';
 import AdminDashboard from './admin/Dashboard';
 import ScrollToTop from "./components/common/ScrollToTop";
 import Navbar from './components/common/Navbar';
-import AuthPage from "./pages/login.jsx"
+import AuthPage from "./pages/Authentication.jsx"
 
 
 function App() {
@@ -15,8 +15,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/auth" element={<AuthPage/>} />
         <Route path="*" element={<PageNotFound />} />
-        <Route path="/login" element={<AuthPage/>} />
       </Routes>
     </BrowserRouter>
   );
