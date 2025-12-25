@@ -97,6 +97,7 @@ const HeroSection = () => {
 
         {/* Animated Button */}
         <motion.div variants={itemVariants}>
+          <a href="/login">
           <motion.button
             whileHover={{
               scale: 1.05,
@@ -115,6 +116,7 @@ const HeroSection = () => {
               className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -skew-x-12"
             />
           </motion.button>
+          </a>
         </motion.div>
       </motion.div>
 
