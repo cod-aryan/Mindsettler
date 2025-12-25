@@ -60,7 +60,7 @@ const JourneySection = () => {
         <motion.div
           animate={{ x: [0, -100, 0], y: [0, 100, 0] }}
           transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-40 right-10 w-[500px] h-[500px] bg-blue-100/40 rounded-full blur-[120px]"
+          className="absolute bottom-40 right-10 w-125 h-125 bg-blue-100/40 rounded-full blur-[120px]"
         />
       </div>
 
@@ -113,7 +113,8 @@ const JourneySection = () => {
         <div className="relative z-10">
           {milestones.map((step, index) => {
             // Single brand color for each card
-            const brandColor = index % 2 === 0 ? "#Dd1764" : "#3F2965";
+            // const brandColor = index % 2 === 0 ? "#Dd1764" : "#3F2965";
+            const brandColor = "#4c4883";
 
             return (
               <motion.div
@@ -129,15 +130,7 @@ const JourneySection = () => {
                 <div className="relative group max-w-sm w-full">
                   {/* --- THE BACKLIGHT SOURCE --- */}
                   <div
-                    className="absolute -inset-4 z-0 opacity-40 blur-[100px] rounded-full transition-opacity duration-500 group-hover:opacity-60"
-                    style={{
-                      backgroundColor: brandColor,
-                    }}
-                  />
-
-                  {/* --- THE SECONDARY GLOW (Tighter) --- */}
-                  <div
-                    className="absolute inset-0 z-0 opacity-30 blur-[40px] rounded-3xl"
+                    className="absolute -inset-1 z-0 opacity-10 blur-[100px] rounded-full transition-opacity duration-500 group-hover:opacity-40"
                     style={{
                       backgroundColor: brandColor,
                     }}
@@ -154,7 +147,7 @@ const JourneySection = () => {
                   />
 
                   {/* --- THE GLASS CARD --- */}
-                  <div className="relative z-10 p-10 bg-white/30 backdrop-blur-2xl rounded-[32px] border border-white/40 shadow-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2">
+                  <div className="relative z-10 p-10 bg-white/30 backdrop-blur-2xl rounded-4xl border border-white/40 shadow-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2">
                     {/* Inner "Refractive" Glow */}
                     <div
                       className="absolute -top-20 -right-20 w-40 h-40 opacity-20 blur-3xl rounded-full"

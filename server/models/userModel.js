@@ -22,11 +22,11 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'], 
         default: 'user' 
     },
-    // Required for MindSettler's "Confidentiality Policy" check
     isConsultant: { 
         type: Boolean, 
         default: false 
     },
+    // Required for MindSettler's "Confidentiality Policy" check
     hasAcceptedPolicy: { 
         type: Boolean, 
         default: false 
