@@ -1,48 +1,50 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, ArrowRight, Sparkles, Heart, CheckCircle2 } from 'lucide-react';
-import axios from 'axios';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Mail, Lock, User, ArrowRight, Sparkles } from "lucide-react";
+import axios from "axios";
 import logo from "../assets/icons/MindsettlerLogo-removebg-preview.png";
-import { Link } from 'react-router';
+import { Link } from "react-router";
 
-// --- 1. ENHANCED HIGH-DENSITY BACKGROUND ---
-const MindDustBackground = () => {
+// 1. Centralized API Instance (Best Practice)
+const API = axios.create({ baseURL: "http://localhost:4000/api" });
+
+// 2. OPTIMIZED BACKGROUND: Using RequestAnimationFrame properly and lowering CPU overhead
+const MindDustBackground = React.memo(() => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d", { alpha: false }); // Optimization: set alpha false if bg is solid
     let particles = [];
-    let mouse = { x: null, y: null, radius: 180 }; // Increased radius for better interaction
-
-    const handleMouseMove = (e) => { 
-      mouse.x = e.clientX; 
-      mouse.y = e.clientY; 
-    };
-    window.addEventListener('mousemove', handleMouseMove);
+    let animationFrameId;
+    let mouse = { x: -1000, y: -1000, radius: 150 };
 
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-    window.addEventListener('resize', resize);
-    resize();
 
     class Particle {
       constructor() {
+        this.init();
+      }
+      init() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        // Smaller size for higher density (looks more like dust/mist)
-        this.size = Math.random() * 1.8 + 0.2; 
+        this.size = Math.random() * 1.5 + 0.2;
         this.baseX = this.x;
         this.baseY = this.y;
-        // Randomized density for varied organic movement
-        this.density = (Math.random() * 25) + 1;
-        this.color = Math.random() > 0.6 ? '#3F2965' : '#DD1764';
+        this.density = Math.random() * 20 + 1;
+        this.color = Math.random() > 0.6 ? "#3F2965" : "#DD1764";
       }
       draw() {
         ctx.fillStyle = this.color;
-        ctx.globalAlpha = 0.35;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
@@ -51,163 +53,279 @@ const MindDustBackground = () => {
         let dx = mouse.x - this.x;
         let dy = mouse.y - this.y;
         let distance = Math.sqrt(dx * dx + dy * dy);
-        
         if (distance < mouse.radius) {
           let force = (mouse.radius - distance) / mouse.radius;
-          // Pushes particles away from the mouse
           this.x -= (dx / distance) * force * this.density;
           this.y -= (dy / distance) * force * this.density;
         } else {
-          // Gently drift back to original position
-          this.x += (this.baseX - this.x) * 0.03;
-          this.y += (this.baseY - this.y) * 0.03;
+          this.x += (this.baseX - this.x) * 0.05;
+          this.y += (this.baseY - this.y) * 0.05;
         }
       }
     }
 
-    // --- INCREASED PARTICLE COUNT HERE ---
     const init = () => {
-      particles = [];
-      const numberOfParticles = 3000; // Increased from 120
-      for (let i = 0; i < numberOfParticles; i++) {
-        particles.push(new Particle());
-      }
+      particles = Array.from({ length: 1500 }, () => new Particle()); // 1500 is the sweet spot for density vs performance
     };
 
     const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => { 
-        p.draw(); 
-        p.update(); 
+      ctx.fillStyle = "#fcfaff"; // Match your background color
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 0.3;
+      particles.forEach((p) => {
+        p.update();
+        p.draw();
       });
-      requestAnimationFrame(animate);
+      animationFrameId = requestAnimationFrame(animate);
     };
 
+    window.addEventListener("mousemove", (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+    window.addEventListener("resize", resize);
+    resize();
     init();
     animate();
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", resize);
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
-};
+  return (
+    <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />
+  );
+});
 
-// --- 2. THE MAIN AUTH PAGE (SAME AS BEFORE) ---
 const AuthPage = () => {
-  const [view, setView] = useState('login'); 
+  const [view, setView] = useState("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
-const handleSubmit = async (e) => {
+  const [errors, setErrors] = useState([]);
+
+  // Reset errors on view change
+  useEffect(() => {
+    setErrors([]);
+  }, [view]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+    if (isSubmitting) return; // Prevent double submission
+
+    setErrors([]);
+    setIsSubmitting(true);
+
+    const data = Object.fromEntries(new FormData(e.target));
+    const endpoint =
+      view === "login"
+        ? "login"
+        : view === "signup"
+        ? "signup"
+        : "forgot-password";
+
     try {
-      setIsSubmitting(true);
-      const API = axios.create({ baseURL: 'http://localhost:4000/api' });
-      const response = await API.post(`/user/${view === 'login' ? 'login' : view === 'signup' ? 'signup' : 'forgot-password'}`, data);
-      const responseData = await response.data;
-      if (responseData.success) {
-        localStorage.setItem('token', responseData.token);
-        window.location.href = '/';
-        setView('success');
-        setIsSubmitting(false);
-      } else {
-        throw new Error('Submission failed');
+      const { data: resData } = await API.post(`/user/${endpoint}`, data);
+
+      if (resData.success) {
+        localStorage.setItem("token", resData.token);
+        if (endpoint === "forgot-password") {
+          setView("forgot-success");
+        } else {
+          // Delay the redirect to let the user feel the "Success"
+          setView("success");
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 2000);
+        }
       }
-    } catch (error) {
-      console.error('Submission Error:', error.response?.data?.message);
-      setView('login');
+    } catch (err) {
+      const errorMsg = err.response?.data?.errors || [
+          err.response?.data?.message,
+        ] || ["Service unavailable"];
+      setErrors(Array.isArray(errorMsg) ? errorMsg : [errorMsg]);
+    } finally {
       setIsSubmitting(false);
     }
   };
+
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-[#fcfaff] overflow-hidden p-6 font-sans">
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-5%] left-[-5%] w-150 h-150 bg-[#3F2965]/10 rounded-full blur-[140px]" />
-        <div className="absolute bottom-[-5%] right-[-5%] w-150 h-150 bg-[#DD1764]/10 rounded-full blur-[140px]" />
-      </div>
-      
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-[#fcfaff] overflow-hidden p-6">
       <MindDustBackground />
 
+      {/* Background Orbs */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-125 h-125 bg-[#3F2965]/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-125 h-125 bg-[#DD1764]/5 rounded-full blur-[120px]" />
+      </div>
+
       <AnimatePresence mode="wait">
-        {view === 'success' ? (
-          <SuccessState key="success" onBack={() => setView('login')} />
+{view === "forgot-success" ? (
+  <motion.div
+    key="forgot-success"
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0 }}
+    className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-2xl p-12 rounded-[2.5rem] shadow-2xl border border-white/50 text-center"
+  >
+    <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+      <Mail size={40} className="text-blue-500" />
+    </div>
+    
+    <h2 className="text-3xl font-bold text-[#3F2965] mb-2">Check your email</h2>
+    <p className="text-gray-500 mb-8">
+      We've sent a password reset link to your inbox. Please check your spam folder if you don't see it. 📥
+    </p>
+
+    <button
+      onClick={() => setView('login')}
+      className="text-sm font-bold text-[#DD1764] hover:underline"
+    >
+      BACK TO LOGIN
+    </button>
+  </motion.div>
+) : (view === "success" ? (
+          <motion.div
+            key="success"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-2xl p-12 rounded-[2.5rem] shadow-2xl border border-white/50 text-center"
+          >
+            {/* 🚀 Step 1: Add your Success Icon and Message here */}
+            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Sparkles size={40} className="text-green-500" />
+            </div>
+            <h2 className="text-3xl font-bold text-[#3F2965] mb-2 text-center">
+              Success!
+            </h2>
+            <p className="text-gray-500 text-center">
+              Redirecting you to your dashboard...
+            </p>
+          </motion.div>
         ) : (
           <motion.div
             key={view}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
-            className="relative z-10 w-full max-w-115 bg-white/75 backdrop-blur-3xl p-12 rounded-[3.5rem] shadow-2xl border border-white/50 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-2xl p-8 md:p-12 rounded-[2.5rem] shadow-2xl border border-white/50"
           >
-          <Link to="/" className="flex items-center justify-center mx-auto mb-6">
-            <img
-              src={logo}
-              alt="MindSettler Logo"
-              className="h-12 w-auto object-contain transition-all duration-500 brightness-100"
-            />
-          </Link>
+            <Link to="/" className="block w-fit mx-auto mb-8">
+              <img
+                src={logo}
+                alt="Logo"
+                className="h-10 w-auto hover:scale-105 transition-transform"
+              />
+            </Link>
 
-            <h2 className="text-3xl font-black text-[#3F2965] mb-2">
-                {view === 'login' ? "Welcome Back" : view === 'signup' ? "Create Account" : "Reset Password"}
-            </h2>
-            <p className="text-gray-400 text-sm mb-8">Secure your mental well-being journey.</p>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-[#3F2965] tracking-tight">
+                {view === "login"
+                  ? "Welcome Back"
+                  : view === "signup"
+                  ? "Begin Journey"
+                  : "Recover Access"}
+              </h2>
+              <p className="text-gray-500 text-sm mt-2">
+                Secure your mental well-being journey.
+              </p>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {view === 'signup' && <Input icon={<User />} placeholder="Full Name" name="name" required />}
-              <Input icon={<Mail />} type="email" placeholder="Email Address" name="email" required />
-              {view !== 'forgot' && <Input icon={<Lock />} type="password" placeholder="Password" name="password" required />}
+            {/* Error List Component */}
+            <AnimatePresence>
+              {errors.length > 0 && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  className="mb-6 overflow-hidden"
+                >
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-2xl text-[13px] text-red-600 font-medium">
+                    {errors.map((err, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span>•</span>
+                        {err}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full bg-[#3F2965] hover:bg-[#DD1764] text-white font-bold py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 mt-4"
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {view === "signup" && (
+                <Input
+                  icon={<User size={18} />}
+                  placeholder="Full Name"
+                  name="name"
+                  required
+                />
+              )}
+              <Input
+                icon={<Mail size={18} />}
+                type="email"
+                placeholder="Email Address"
+                name="email"
+                required
+              />
+              {view !== "forgot" && (
+                <Input
+                  icon={<Lock size={18} />}
+                  type="password"
+                  placeholder="Password"
+                  name="password"
+                  required
+                />
+              )}
+
+              <button
+                disabled={isSubmitting}
+                className="w-full bg-[#3F2965] hover:bg-[#2d1d49] text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-[#3F2965]/20 disabled:opacity-70 mt-4"
               >
-                {isSubmitting ? <Sparkles className="animate-spin" /> : "CONTINUE"}
+                {isSubmitting ? (
+                  <Sparkles className="animate-spin" />
+                ) : (
+                  "CONTINUE"
+                )}
                 {!isSubmitting && <ArrowRight size={18} />}
-              </motion.button>
+              </button>
             </form>
 
-            <div className="mt-8 flex flex-col gap-3">
-               <button onClick={() => setView(view === 'login' ? 'signup' : 'login')} className="text-sm font-bold text-[#DD1764]">
-                 {view === 'login' ? "DON'T HAVE AN ACCOUNT? SIGN UP" : "ALREADY HAVE AN ACCOUNT? LOG IN"}
-               </button>
-               {view === 'login' && (
-                 <button onClick={() => setView('forgot')} className="text-xs text-gray-400 hover:text-[#3F2965]">
-                   Forgot your password?
-                 </button>
-               )}
+            <div className="mt-8 text-center space-y-3">
+              <button
+                onClick={() => setView(view === "login" ? "signup" : "login")}
+                className="text-sm font-bold text-[#DD1764] hover:underline"
+              >
+                {view === "login"
+                  ? "NEW HERE? CREATE ACCOUNT"
+                  : "HAVE AN ACCOUNT? LOG IN"}
+              </button>
+              {view === "login" && (
+                <button
+                  onClick={() => setView("forgot")}
+                  className="block mx-auto text-xs text-gray-400 hover:text-[#3F2965] transition-colors"
+                >
+                  Forgot your password?
+                </button>
+              )}
             </div>
           </motion.div>
-        )}
+        ))}
       </AnimatePresence>
     </div>
   );
 };
 
-// Reusable Input
 const Input = ({ icon, ...props }) => (
   <div className="relative group">
-    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#DD1764] transition-colors">
-      {React.cloneElement(icon, { size: 18 })}
+    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#3F2965] transition-colors">
+      {icon}
     </div>
-    <input 
-      {...props} 
-      className="w-full pl-12 pr-6 py-4 bg-gray-50/50 rounded-2xl border-2 border-transparent focus:border-[#DD1764]/20 focus:bg-white outline-none transition-all font-semibold"
+    <input
+      {...props}
+      className="w-full pl-12 pr-4 py-4 bg-gray-50/50 rounded-2xl border border-transparent focus:border-[#3F2965]/20 focus:bg-white outline-none transition-all text-[#3F2965] font-medium"
     />
   </div>
-);
-
-const SuccessState = ({ onBack }) => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="z-10 bg-white p-12 rounded-[3.5rem] text-center shadow-2xl max-w-sm">
-    <CheckCircle2 size={50} className="text-green-500 mx-auto mb-4" />
-    <h2 className="text-2xl font-bold text-[#3F2965]">Check your email</h2>
-    <p className="text-gray-400 my-4 text-sm">We've sent a magic link to your inbox.</p>
-    <button onClick={onBack} className="text-[#DD1764] font-bold underline">Back to Login</button>
-  </motion.div>
 );
 
 export default AuthPage;

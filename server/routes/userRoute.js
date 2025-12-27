@@ -1,19 +1,60 @@
 import express from "express";
+import { body, validationResult } from "express-validator";
 import { userSignup, login, forgotPassword, getMe } from "../controllers/userController.js";
 import { protect } from "../middlewares/userMiddleware.js";
 
 const router = express.Router();
 
-// Sample route to get user information
-router.post("/signup", userSignup);
-router.post("/login", login);
-router.post("/forgot-password", forgotPassword);
+// Middleware to catch validation errors
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      success: false, 
+      errors: errors.array().map(err => err.msg) 
+    });
+  }
+  next();
+};
+
+// --- VALIDATED ROUTES ---
+
+router.post(
+  "/signup",
+  [
+    body("name")
+    .isLength({ min: 3 })
+    .withMessage("Name must be at least 3 characters long"),
+    body("email").isEmail().withMessage("Please provide a valid email address"),
+    body("password")
+      .isLength({ min: 6 })
+      .withMessage("Password must be at least 6 characters long"),
+  ],
+  validate,
+  userSignup
+);
+
+router.post(
+  "/login",
+  [
+    body("email").isEmail().withMessage("Please enter a valid email"),
+    body("password").notEmpty().withMessage("Password cannot be empty"),
+  ],
+  validate,
+  login
+);
+
+router.post(
+  "/forgot-password",
+  [body("email").isEmail().withMessage("Please enter a valid email to reset password")],
+  validate,
+  forgotPassword
+);
+
 router.get("/profile", protect, (req, res) => {
-  res.status(200).json({
-    success: true,
-    user: req.user,
-  });
+  res.status(200).json({ success: true, user: req.user });
 });
+
 router.get("/me", protect, getMe);
 
 export default router;
