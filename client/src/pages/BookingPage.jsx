@@ -30,9 +30,7 @@ const BookingPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-700 flex flex-col  ">
-      <Navbar /> {/* Integrated Navbar */}
-
-      <main className="p-4 md:p-8 mt-25 pt-24"> {/* Added padding top for fixed navbars if applicable */}
+      <main className="p-4 md:p-8 pt-24"> {/* Added padding top for fixed navbars if applicable */}
         <header className="mb-8 max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold" style={{ color: colors.primary }}>MindSettler Appointments</h1>
           <p className="text-md text-slate-500">Home &gt; Appointments</p>

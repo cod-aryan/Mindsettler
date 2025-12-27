@@ -57,7 +57,7 @@ const Navbar = () => {
 
         <ul className="hidden lg:flex items-center space-x-8">
           {navLinks.map((link) => (
-            <li key={link.name} className="relative group py-2">
+            <li key={link.name} className="relative group py-1">
               <NavLink
                 to={link.href}
                 className={({ isActive }) => `

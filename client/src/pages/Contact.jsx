@@ -34,8 +34,6 @@ const ContactPage = () => {
   ];
 
   return (
-    <>
-    <div className="h-25" />
     <div className="min-h-screen bg-[#FDFCF9] font-sans text-[#3F2965]">
       {/* Header Section */}
       <section className="pt-5 pb-32 text-center px-4">
@@ -68,7 +66,7 @@ const ContactPage = () => {
                 <motion.div 
                   key={index}
                   whileHover={{ y: -5 }}
-                  className={`${item.bgColor} p-8 rounded-[24px] flex flex-col items-center text-center transition-all shadow-sm border border-white/50`}
+                  className={`${item.bgColor} p-8 rounded-3xl flex flex-col items-center text-center transition-all shadow-sm border border-white/50`}
                 >
                   <div className="mb-4">{item.icon}</div>
                   <h3 className="font-bold text-lg mb-1">{item.title}</h3>
@@ -78,7 +76,7 @@ const ContactPage = () => {
             </div>
 
             {/* Google Map Placeholder */}
-            <div className="w-full h-64 rounded-[32px] overflow-hidden shadow-lg border-4 border-white">
+            <div className="w-full h-64 rounded-4xl overflow-hidden shadow-lg border-4 border-white">
               <iframe 
                 title="MindSettler Location"
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.83543450937!2d-122.4194155!3d37.7749295!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8085809c6c8f4459%3A0xb10ed6d9b5050fa5!2sTwitter%20HQ!5e0!3m2!1sen!2sus!4v1633000000000!5m2!1sen!2sus" 
@@ -146,7 +144,6 @@ const ContactPage = () => {
         </div>
       </div>
     </div>
-    </>
   );
 };
 
