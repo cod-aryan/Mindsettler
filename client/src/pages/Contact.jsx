@@ -1,6 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Mail, MessageCircle, Instagram, Send } from 'lucide-react';
+import Navbar from '../components/common/Navbar';
+
+
 
 const ContactPage = () => {
   const contactInfo = [

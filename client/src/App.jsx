@@ -8,6 +8,7 @@ import Navbar from "./components/common/Navbar";
 import AdminDashboard from "./admin/Dashboard";
 import Logout from "./components/auth/Logout.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
+import BookingPage from "./pages/BookingPage.jsx";
 
 // A small component to wrap public pages with the Navbar
 const PublicLayout = () => (
@@ -26,6 +27,7 @@ function App() {
         {/* GROUP 1: Public Pages (With Navbar) */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="booking" element={<BookingPage/>}/>
           {/* Add other public pages like /about or /contact here */}
         </Route>
 

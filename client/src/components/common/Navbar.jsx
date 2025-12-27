@@ -19,7 +19,7 @@ const Navbar = () => {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "About", href: "#" },
-    { name: "Psycho-Education", href: "#" },
+    { name: "Booking Session", href: "/booking" },
     { name: "How it Works", href: "#" },
     { name: "Resources", href: "#" },
     { name: "Corporate Services", href: "#" },
