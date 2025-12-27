@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, ArrowRight, Sparkles, Heart, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
+import logo from "../assets/icons/MindsettlerLogo-removebg-preview.png";
+import { Link } from 'react-router';
 
 // --- 1. ENHANCED HIGH-DENSITY BACKGROUND ---
 const MindDustBackground = () => {
@@ -108,7 +110,8 @@ const handleSubmit = async (e) => {
       const response = await API.post(`/user/${view === 'login' ? 'login' : view === 'signup' ? 'signup' : 'forgot-password'}`, data);
       const responseData = await response.data;
       if (responseData.success) {
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('token', responseData.token);
+        window.location.href = '/';
         setView('success');
         setIsSubmitting(false);
       } else {
@@ -120,7 +123,6 @@ const handleSubmit = async (e) => {
       setIsSubmitting(false);
     }
   };
-
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center bg-[#fcfaff] overflow-hidden p-6 font-sans">
       <div className="absolute inset-0 z-0">
@@ -141,10 +143,13 @@ const handleSubmit = async (e) => {
             exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
             className="relative z-10 w-full max-w-115 bg-white/75 backdrop-blur-3xl p-12 rounded-[3.5rem] shadow-2xl border border-white/50 text-center"
           >
-            {/* Minimalist Logo */}
-            <div className="w-12 h-12 bg-linear-to-br from-[#3F2965] to-[#DD1764] rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <Heart className="text-white" fill="white" size={20} />
-            </div>
+          <Link to="/" className="flex items-center justify-center mx-auto mb-6">
+            <img
+              src={logo}
+              alt="MindSettler Logo"
+              className="h-12 w-auto object-contain transition-all duration-500 brightness-100"
+            />
+          </Link>
 
             <h2 className="text-3xl font-black text-[#3F2965] mb-2">
                 {view === 'login' ? "Welcome Back" : view === 'signup' ? "Create Account" : "Reset Password"}

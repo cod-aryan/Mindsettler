@@ -5,12 +5,12 @@ import FAQ from "../components/common/FAQ";
 
 
 function Home() {
-  console.log("Home page rendered");
   return (
     <div className="min-h-screen bg-slate-50 font-sans antialiased">
       <HeroSection />
       <div class="h-40 bg-linear-to-b from-[#6b5e5a]/30 to-[#f3f1ff]"></div>
       <JourneySection />
+      <div class="h-40 bg-linear-to-b from-[#f3f1ff] to-[#fdfcf8]"></div>
       <FAQ />
     </div>
   );

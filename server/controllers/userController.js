@@ -98,3 +98,17 @@ export const getUserProfile = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+
+
+// @desc    Get current logged in user (for frontend auth)
+// @route   GET /api/user/me
+// @access  Private
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+};

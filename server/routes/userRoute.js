@@ -1,5 +1,5 @@
 import express from "express";
-import { userSignup, login, forgotPassword } from "../controllers/userController.js";
+import { userSignup, login, forgotPassword, getMe } from "../controllers/userController.js";
 import { protect } from "../middlewares/userMiddleware.js";
 
 const router = express.Router();
@@ -14,5 +14,6 @@ router.get("/profile", protect, (req, res) => {
     user: req.user,
   });
 });
+router.get("/me", protect, getMe);
 
 export default router;

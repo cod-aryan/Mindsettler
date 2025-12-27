@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import logo from "../../assets/icons/MindsettlerLogo-removebg-preview.png";
 import { Link } from "react-router";
+import { useAuth } from "../../context/AuthContext";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,15 +17,23 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { name: "Admin", href: "/admin" },
     { name: "Home", href: "/" },
     { name: "About", href: "#" },
     { name: "Psycho-Education", href: "#" },
     { name: "How it Works", href: "#" },
     { name: "Resources", href: "#" },
     { name: "Corporate Services", href: "#" },
-    { name: "Contact", href: "/contact" },
+    { name: "Contact", href: "/contact" }
   ];
+  if (!user) {
+    navLinks.push({ name: "Login", href: "/auth" });
+  } else {
+    if (user.role==="admin") {
+      navLinks.push({ name: "Admin", href: "/admin" });
+    }
+    navLinks.push({ name: `Logout`, href: "/logout" });
+  }
+  console.log(navLinks);
 
   return (
     <div className="fixed top-6 left-0 w-full z-50 px-6 flex justify-center">
