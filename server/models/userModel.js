@@ -3,7 +3,9 @@ import mongoose from 'mongoose';
 const userSchema = new mongoose.Schema({
     name: { 
         type: String, 
-        required: [true, 'Please add a name'] 
+        required: [true, 'Please add a name'],
+        minlength: 3,
+        maxlength: 50
     },
     email: { 
         type: String, 
@@ -15,6 +17,7 @@ const userSchema = new mongoose.Schema({
         type: String, 
         required: [true, 'Please add a password'], 
         minlength: 6, 
+        maxlength: 128,
         select: false // Won't return password in queries by default
     },
     role: { 

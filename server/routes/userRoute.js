@@ -23,8 +23,8 @@ router.post(
   "/signup",
   [
     body("name")
-    .isLength({ min: 3 })
-    .withMessage("Name must be at least 3 characters long"),
+    .isLength({ min: 3, max: 50 })
+    .withMessage("Name must be between 3 and 50 characters"),
     body("email").isEmail().withMessage("Please provide a valid email address"),
     body("password")
       .isLength({ min: 6 })
@@ -50,10 +50,6 @@ router.post(
   validate,
   forgotPassword
 );
-
-router.get("/profile", protect, (req, res) => {
-  res.status(200).json({ success: true, user: req.user });
-});
 
 router.get("/me", protect, getMe);
 

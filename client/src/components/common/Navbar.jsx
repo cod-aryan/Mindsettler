@@ -33,7 +33,6 @@ const Navbar = () => {
     }
     navLinks.push({ name: `Logout`, href: "/logout" });
   }
-  console.log(navLinks);
 
   return (
     <div className="fixed top-6 left-0 w-full z-50 px-6 flex justify-center">

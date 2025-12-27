@@ -112,7 +112,6 @@ const AuthPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return; // Prevent double submission
-
     setErrors([]);
     setIsSubmitting(true);
 
@@ -143,7 +142,8 @@ const AuthPage = () => {
       const errorMsg = err.response?.data?.errors || [
           err.response?.data?.message,
         ] || ["Service unavailable"];
-      setErrors(Array.isArray(errorMsg) ? errorMsg : [errorMsg]);
+      setErrors(errorMsg);
+      localStorage.removeItem("token");
     } finally {
       setIsSubmitting(false);
     }

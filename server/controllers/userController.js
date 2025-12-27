@@ -47,7 +47,6 @@ export const login = async (req, res) => {
         const { email, password } = req.body;
         // 1. Find user & include password (since we set select: false in schema)
         const user = await User.findOne({ email }).select('+password');
-        console.log(!user);
         if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
         // 2. Check password
