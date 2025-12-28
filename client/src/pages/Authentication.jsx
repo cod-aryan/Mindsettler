@@ -1,20 +1,16 @@
 import React, {
   useState,
   useEffect,
-  useRef,
-  useMemo,
-  useCallback,
+  useRef
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, User, ArrowRight, Sparkles } from "lucide-react";
-import axios from "axios";
+import API from "../api/axios";
 import logo from "../assets/icons/MindsettlerLogo-removebg-preview.png";
 import { Link } from "react-router";
 
-// 1. Centralized API Instance (Best Practice)
-const API = axios.create({ baseURL: "http://localhost:4000/api" });
 
-// 2. OPTIMIZED BACKGROUND: Using RequestAnimationFrame properly and lowering CPU overhead
+// Using RequestAnimationFrame properly and lowering CPU overhead
 const MindDustBackground = React.memo(() => {
   const canvasRef = useRef(null);
 
@@ -127,7 +123,6 @@ const AuthPage = () => {
       const { data: resData } = await API.post(`/user/${endpoint}`, data);
 
       if (resData.success) {
-        localStorage.setItem("token", resData.token);
         if (endpoint === "forgot-password") {
           setView("forgot-success");
         } else {
@@ -143,7 +138,6 @@ const AuthPage = () => {
           err.response?.data?.message,
         ] || ["Service unavailable"];
       setErrors(errorMsg);
-      localStorage.removeItem("token");
     } finally {
       setIsSubmitting(false);
     }

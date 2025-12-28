@@ -11,13 +11,6 @@ import { useAuth } from "./context/AuthContext.jsx";
 import BookingPage from "./pages/BookingPage.jsx";
 
 // A small component to wrap public pages with the Navbar
-const NavbarWithMarginTop = () => (
-  <>
-    <div className="h-25" />
-    <Navbar />
-    <Outlet />
-  </>
-);
 
 function App() {
   const { user } = useAuth();
@@ -26,12 +19,9 @@ function App() {
       <ScrollToTop />
       <Routes>
         {/* GROUP 1: Public Pages (With Navbar) */}
-        <Route element={<NavbarWithMarginTop />}>
-          <Route path="/booking" element={<BookingPage/>}/>
-          <Route path="/contact" element={<ContactPage />} />
-        </Route>
-
         <Route path="/" element={<Home />} />
+        <Route path="/booking" element={<BookingPage/>}/>
+        <Route path="/contact" element={<ContactPage />} />
         {!user && <Route path="/auth" element={<AuthPage />} />}
         {user && <Route path="/logout" element={<Logout />} />}
         {/* GROUP 2: Admin Pages (No Public Navbar) */}

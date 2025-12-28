@@ -29,7 +29,9 @@ const BookingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-700 flex flex-col  ">
+    <>
+    <Navbar />
+    <div className="min-h-screen pt-25 bg-slate-50 font-sans text-slate-700 flex flex-col  ">
       <main className="p-4 md:p-8 pt-24"> {/* Added padding top for fixed navbars if applicable */}
         <header className="mb-8 max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold" style={{ color: colors.primary }}>MindSettler Appointments</h1>
@@ -51,9 +53,9 @@ const BookingPage = () => {
                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="text-slate-400 pb-2">{d}</div>)}
                 {Array.from({ length: 31 }, (_, i) => (
                   <button 
-                    key={i} 
-                    className={`p-2 rounded-full transition-all ${i + 1 === 2 ? 'text-white' : 'hover:bg-slate-100'}`}
-                    style={i + 1 === 2 ? { backgroundColor: colors.secondary } : {}}
+                  key={i} 
+                  className={`p-2 rounded-full transition-all ${i + 1 === 2 ? 'text-white' : 'hover:bg-slate-100'}`}
+                  style={i + 1 === 2 ? { backgroundColor: colors.secondary } : {}}
                   >
                     {i + 1}
                   </button>
@@ -79,14 +81,14 @@ const BookingPage = () => {
                 onClick={() => setSessionType('online')}
                 className="flex-1 p-4 rounded-xl border-2 flex items-center justify-center gap-2 transition-all font-semibold"
                 style={sessionType === 'online' ? { borderColor: colors.primary, backgroundColor: colors.purpleLight, color: colors.primary } : { borderColor: '#f1f5f9' }}
-              >
+                >
                 <Video size={20} /> Online Studio
               </button>
               <button 
                 onClick={() => setSessionType('offline')}
                 className="flex-1 p-4 rounded-xl border-2 flex items-center justify-center gap-2 transition-all font-semibold"
                 style={sessionType === 'offline' ? { borderColor: colors.primary, backgroundColor: colors.purpleLight, color: colors.primary } : { borderColor: '#f1f5f9' }}
-              >
+                >
                 <MapPin size={20} /> Offline Studio
               </button>
             </div>
@@ -98,15 +100,15 @@ const BookingPage = () => {
               subtitle="9:00 AM to 12:00 PM" 
               accentColor={colors.secondary} 
               lightAccent={colors.accentLight} 
-            />
+              />
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
               {morningSlots.map(slot => (
                 <SlotButton 
-                  key={slot} 
-                  time={slot} 
-                  selected={selectedSlot === slot} 
-                  onClick={() => setSelectedSlot(slot)} 
-                  primaryColor={colors.primary}
+                key={slot} 
+                time={slot} 
+                selected={selectedSlot === slot} 
+                onClick={() => setSelectedSlot(slot)} 
+                primaryColor={colors.primary}
                 />
               ))}
             </div>
@@ -118,15 +120,15 @@ const BookingPage = () => {
               subtitle="5:00 PM to 09:00 PM" 
               accentColor={colors.secondary} 
               lightAccent={colors.accentLight} 
-            />
+              />
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
               {eveningSlots.map(slot => (
                 <SlotButton 
-                  key={slot} 
-                  time={slot} 
-                  selected={selectedSlot === slot} 
-                  onClick={() => setSelectedSlot(slot)} 
-                  primaryColor={colors.primary}
+                key={slot} 
+                time={slot} 
+                selected={selectedSlot === slot} 
+                onClick={() => setSelectedSlot(slot)} 
+                primaryColor={colors.primary}
                 />
               ))}
             </div>
@@ -144,7 +146,7 @@ const BookingPage = () => {
                 onClick={handleBooking}
                 className="w-full md:w-auto px-10 py-4 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-95"
                 style={{ backgroundColor: colors.primary }}
-              >
+                >
                 Request Appointment
               </button>
             </div>
@@ -152,6 +154,7 @@ const BookingPage = () => {
         </div>
       </main>
     </div>
+  </>
   );
 };
 
@@ -174,8 +177,8 @@ const SlotButton = ({ time, selected, onClick, primaryColor }) => (
     onClick={onClick}
     className={`py-3 px-2 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2
       ${selected ? 'text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
-    style={selected ? { backgroundColor: primaryColor, borderColor: primaryColor } : {}}
-  >
+      style={selected ? { backgroundColor: primaryColor, borderColor: primaryColor } : {}}
+      >
     {selected && <span className="text-lg">→</span>}
     {time}
   </button>

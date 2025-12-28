@@ -2,18 +2,22 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
 // Middlewares
-app.use(cors()); // Enable Cross-Origin Resource Sharing (CORS).
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+})); // Enable Cross-Origin Resource Sharing (CORS).
 app.use(express.json()); // Handles JSON data (like from an API call in React)
 app.use(bodyParser.urlencoded({ extended: true })); // Handles URL-encoded data (like from a standard HTML form)
 app.use(morgan("dev")); // It automatically logs every incoming HTTP request to your terminal console so you can see what is happening in real-time
+app.use(cookieParser()); // This populates req.cookies
 
 // Basic route to check if server is running
 import userRoute from "./routes/userRoute.js";
-import { protect } from "./middlewares/userMiddleware.js";
 import appointnentRoute from "./routes/appointmentRoute.js";
 app.use("/api/user", userRoute);
 app.use("/api/appointment", appointnentRoute);

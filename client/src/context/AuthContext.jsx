@@ -1,7 +1,5 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-
-const API = axios.create({ baseURL: 'http://localhost:4000/api' });
+import API from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -11,21 +9,11 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const checkUser = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
       try {
-        const res = await API.get('/user/me', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await API.get('/user/me');
         setUser(res.data.user); // Now you have the role!
       } catch (err) {
         console.error("Error fetching user data:", err); // Debugging line to check for errors
-        // localStorage.remo veItem('token');
       }
       setLoading(false);
     };
