@@ -23,7 +23,7 @@ function App() {
         <Route path="/booking" element={<BookingPage/>}/>
         <Route path="/contact" element={<ContactPage />} />
         {!user && <Route path="/auth" element={<AuthPage />} />}
-        {user && <Route path="/logout" element={<Logout />} />}
+        <Route path="/logout" element={<Logout />} />
         {/* GROUP 2: Admin Pages (No Public Navbar) */}
         {/* Your AdminDashboard has its own Sidebar, so it doesn't need a wrapper */}
         {user && user.role==="admin" && <Route path="/admin" element={<AdminDashboard />} />}

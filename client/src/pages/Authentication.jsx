@@ -8,6 +8,8 @@ import { Mail, Lock, User, ArrowRight, Sparkles } from "lucide-react";
 import API from "../api/axios";
 import logo from "../assets/icons/MindsettlerLogo-removebg-preview.png";
 import { Link } from "react-router";
+import { useNavigate } from "react-router";
+import { useAuth } from "../context/AuthContext";
 
 
 // Using RequestAnimationFrame properly and lowering CPU overhead
@@ -99,6 +101,8 @@ const AuthPage = () => {
   const [view, setView] = useState("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState([]);
+  const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   // Reset errors on view change
   useEffect(() => {
@@ -129,7 +133,8 @@ const AuthPage = () => {
           // Delay the redirect to let the user feel the "Success"
           setView("success");
           setTimeout(() => {
-            window.location.href = "/";
+            setUser(resData.user);
+            navigate("/");
           }, 2000);
         }
       }

@@ -37,10 +37,17 @@ export const userSignup = async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "Lax",
     };
+
     res
       .cookie("token", token, cookieOptions)
       .status(200)
-      .json({ success: true });
+      .json({
+        success: true,
+        user: {
+          name: user.name,
+          email: user.email,
+        },
+      });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -69,7 +76,13 @@ export const login = async (req, res) => {
     res
       .cookie("token", token, cookieOptions)
       .status(200)
-      .json({ success: true });
+      .json({
+        success: true,
+        user: {
+          name: user.name,
+          email: user.email,
+        },
+      });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -120,7 +133,6 @@ export const getMe = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
-
 
 export const logout = async (req, res) => {
   try {
