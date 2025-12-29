@@ -107,7 +107,7 @@ export default function Footer() {
                 <li className="flex items-center text-gray-600 text-sm">
                   <span className="mr-2">→</span>
                   <a
-                    href="#"
+                    href="/contact"
                     className="hover:text-[#Dd1764] transition-colors"
                   >
                     Contact Us

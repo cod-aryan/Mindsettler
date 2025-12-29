@@ -9,6 +9,7 @@ import AdminDashboard from "./admin/Dashboard";
 import Logout from "./components/auth/Logout.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
 import BookingPage from "./pages/BookingPage.jsx";
+import CorporateServices from "./pages/CorporateServices.jsx";
 
 // A small component to wrap public pages with the Navbar
 
@@ -22,6 +23,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/booking" element={<BookingPage/>}/>
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/corporate" element={<CorporateServices/>}/>
         {!user && <Route path="/auth" element={<AuthPage />} />}
         <Route path="/logout" element={<Logout />} />
         {/* GROUP 2: Admin Pages (No Public Navbar) */}
