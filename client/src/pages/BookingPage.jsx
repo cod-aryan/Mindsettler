@@ -8,14 +8,16 @@ import {
   Coffee,
   ChevronLeft,
   ChevronRight,
+  Stethoscope,
+  Heart,
 } from "lucide-react";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 
 const BookingPage = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date(2025, 7, 2));
   const [selectedSlot, setSelectedSlot] = useState("10:10 AM");
   const [sessionType, setSessionType] = useState("online");
+  const [selectedTherapy, setSelectedTherapy] = useState("Cognitive Behavioural Therapy (CBT)");
 
   // Color Palette Constants
   const colors = {
@@ -25,49 +27,44 @@ const BookingPage = () => {
     purpleLight: "#E9E4F0", // Light Purple shade
   };
 
-  const morningSlots = [
-    "9:00 AM",
-    "9:10 AM",
-    "9:20 AM",
-    "9:30 AM",
-    "9:40 AM",
-    "9:50 AM",
-    "10:00 AM",
-    "10:10 AM",
-    "10:20 AM",
-    "10:30 AM",
+  const therapies = [
+    "Cognitive Behavioural Therapy (CBT)",
+    "Dialectical Behavioural Therapy (DBT)",
+    "Acceptance & Commitment Therapy (ACT)",
+    "Schema Therapy",
+    "Emotion-Focused Therapy (EFT)",
+    "Emotion-Focused Couples Therapy",
+    "Mindfulness-Based Cognitive Therapy",
+    "Client-Centred Therapy",
   ];
+
+  const morningSlots = [
+    "9:00 AM", "9:10 AM", "9:20 AM", "9:30 AM", "9:40 AM",
+    "9:50 AM", "10:00 AM", "10:10 AM", "10:20 AM", "10:30 AM",
+  ];
+  
   const eveningSlots = [
-    "5:00 PM",
-    "5:10 PM",
-    "5:20 PM",
-    "5:30 PM",
-    "5:40 PM",
-    "5:50 PM",
-    "6:00 PM",
-    "6:10 PM",
-    "6:20 PM",
+    "5:00 PM", "5:10 PM", "5:20 PM", "5:30 PM", "5:40 PM",
+    "5:50 PM", "6:00 PM", "6:10 PM", "6:20 PM",
   ];
 
   const handleBooking = () => {
     const bookingData = {
-      date: selectedDate,
+      therapy: selectedTherapy,
       time: selectedSlot,
       type: sessionType,
       status: "Pending Confirmation",
     };
     alert(
-      `Request Sent for ${selectedSlot}! Please complete payment via UPI to confirm.`
+      `Request Sent for ${selectedTherapy} at ${selectedSlot}! Please complete payment via UPI to confirm.`
     );
   };
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-25 bg-slate-50 font-sans text-slate-700 flex flex-col  ">
+      <div className="min-h-screen pt-25 bg-slate-50 font-sans text-slate-700 flex flex-col">
         <main className="p-4 md:p-8 pt-24">
-          {" "}
-          {/* Added padding top for fixed navbars if applicable */}
           <header className="mb-8 max-w-6xl mx-auto">
             <h1
               className="text-4xl font-bold"
@@ -77,55 +74,59 @@ const BookingPage = () => {
             </h1>
             <p className="text-md text-slate-500">Home &gt; Appointments</p>
           </header>
+
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column */}
+            
+            {/* Left Column: Therapy Selection */}
             <div className="space-y-6">
-              {/* Calendar */}
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <div className="flex justify-between items-center mb-6">
-                  <button className="p-2 hover:bg-slate-100 rounded-full">
-                    <ChevronLeft size={20} />
-                  </button>
-                  <h2 className="font-bold uppercase tracking-wider text-slate-800">
-                    AUG 2025
+                <div className="mb-4">
+                  <h2 className="font-bold text-lg mb-1" style={{ color: colors.primary }}>
+                    PERSONALIZED THERAPY
                   </h2>
-                  <button className="p-2 hover:bg-slate-100 rounded-full">
-                    <ChevronRight size={20} />
-                  </button>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                    Designed Around You
+                  </p>
                 </div>
-                <div className="grid grid-cols-7 gap-2 text-center text-sm font-medium">
-                  {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
-                    <div key={d} className="text-slate-400 pb-2">
-                      {d}
-                    </div>
-                  ))}
-                  {Array.from({ length: 31 }, (_, i) => (
+                
+                <div className="space-y-2">
+                  {therapies.map((therapy) => (
                     <button
-                      key={i}
-                      className={`p-2 rounded-full transition-all ${
-                        i + 1 === 2 ? "text-white" : "hover:bg-slate-100"
+                      key={therapy}
+                      onClick={() => setSelectedTherapy(therapy)}
+                      className={`w-full text-left p-3 rounded-xl text-sm transition-all border ${
+                        selectedTherapy === therapy
+                          ? "border-magenta-500 bg-pink-50 font-semibold"
+                          : "border-slate-100 hover:bg-slate-50 text-slate-600"
                       }`}
                       style={
-                        i + 1 === 2 ? { backgroundColor: colors.secondary } : {}
+                        selectedTherapy === therapy
+                          ? { borderColor: colors.secondary, color: colors.primary, backgroundColor: colors.accentLight }
+                          : {}
                       }
                     >
-                      {i + 1}
+                      <div className="flex items-center gap-3">
+                        <div 
+                           className={`w-2 h-2 rounded-full ${selectedTherapy === therapy ? "opacity-100" : "opacity-0"}`}
+                           style={{ backgroundColor: colors.secondary }}
+                        />
+                        {therapy}
+                      </div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Info Box */}
+              {/* Support Info Box */}
               <div
                 className="p-6 rounded-2xl shadow-lg text-white"
                 style={{ backgroundColor: colors.primary }}
               >
                 <h3 className="font-bold mb-2 flex items-center gap-2">
-                  <CheckCircle size={18} /> Introductory Session
+                  <Heart size={18} /> Professional Support
                 </h3>
                 <p className="text-sm opacity-90">
-                  Our 60-minute first session focuses on understanding your
-                  journey in a safe and confidential environment.
+                  Select the therapy style that best fits your needs. Not sure? Choose CBT for a balanced introductory approach.
                 </p>
               </div>
             </div>
@@ -211,7 +212,7 @@ const BookingPage = () => {
               {/* Payment & Action */}
               <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                 <div>
-                  <p className="text-sm text-slate-500">Payment Method</p>
+                  <p className="text-sm text-slate-500">Selected: <span className="font-semibold" style={{color: colors.primary}}>{selectedTherapy}</span></p>
                   <p className="font-bold text-slate-800">
                     UPI ID: mindsettler@upi
                   </p>
@@ -234,13 +235,13 @@ const BookingPage = () => {
           </div>
         </main>
       </div>
-      <div class="h-40 bg-linear-to-b from-[#f9fafc] to-[#fdfcf8]"></div>
+      <div className="h-40 bg-gradient-to-b from-[#f9fafc] to-[#fdfcf8]"></div>
       <Footer />
     </>
   );
 };
 
-// Helper Components with Dynamic Styling
+// Helper Components
 const SectionTitle = ({ icon, title, subtitle, accentColor, lightAccent }) => (
   <div className="flex justify-between items-end mb-4">
     <div className="flex items-center gap-3">
@@ -255,7 +256,6 @@ const SectionTitle = ({ icon, title, subtitle, accentColor, lightAccent }) => (
         <span className="text-xs text-slate-400">{subtitle}</span>
       </div>
     </div>
-    {/* <button className="text-sm font-semibold hover:underline" style={{ color: accentColor }}>+ Add Slots</button> */}
   </div>
 );
 
