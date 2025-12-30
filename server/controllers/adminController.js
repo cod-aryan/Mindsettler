@@ -34,44 +34,6 @@ export const setAvailability = async (req, res) => {
 };
 
 /**
- * @desc    Approve a pending UPI Top-up and credit wallet
- * @route   PATCH /api/admin/approve-topup/:id
- * @access  Private/Admin
- */
-export const approveTopup = async (req, res) => {
-    try {
-        const transaction = await Transaction.findById(req.params.id);
-        if (!transaction || transaction.status !== 'Pending') {
-            return res.status(400).json({ message: "Invalid transaction or already processed" });
-        }
-        const user = await User.findById(transaction.user);
-        if (!user) return res.status(404).json({ message: "User not found" });
-        // 1. Update User Balance
-        user.walletBalance += transaction.amount;
-        await user.save();
-
-        // 2. Update Transaction Status
-        transaction.status = 'Completed';
-        await transaction.save();
-
-        // 3. Create a record in Wallet History (Ledger)
-        await WalletTransaction.create({
-            user: user._id,
-            amount: transaction.amount,
-            type: 'credit',
-            purpose: 'topup',
-            status: 'completed',
-            referenceId: transaction.transactionId, // Store the UPI Ref ID
-            balanceAfter: user.walletBalance
-        });
-
-        res.status(200).json({ success: true, message: "Wallet topped up successfully" });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-/**
  * @desc    Get all appointments for Admin view
  * @route   GET /api/admin/appointments
  * @access  Private/Admin

@@ -11,7 +11,7 @@ export const bookSession = async (req, res) => {
     const { therapyType, sessionType, timeSlot, availabilityRef, notes } =
       req.body;
 
-    const sessionPrice = 500;
+    const sessionPrice = process.env.SESSION_PRICE;
 
     // 1. Check User Wallet Balance
     const user = await User.findById(req.user._id);
@@ -99,7 +99,7 @@ export const updateStatus = async (req, res) => {
     // If an appointment is Rejected, we must refund the user's wallet
     if (status === "Rejected" && appointment.status !== "Rejected") {
       const user = await User.findById(appointment.user);
-      const refundAmount = 500; // Match session price
+      const refundAmount = process.env.SESSION_PRICE; // Match session price
 
       // Refund logic
       user.walletBalance += refundAmount;

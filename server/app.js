@@ -20,9 +20,13 @@ app.use(cookieParser()); // This populates req.cookies
 import userRoute from "./routes/userRoute.js";
 import appointnentRoute from "./routes/appointmentRoute.js";
 import adminRoute from "./routes/adminRoute.js";
+import { protect } from "./middlewares/userMiddleware.js";
+import walletTransactionsRoute from './routes/walletRoute.js'
 app.use("/api/user", userRoute);
 app.use("/api/appointment", appointnentRoute);
 app.use("/api/admin", adminRoute);
+// wallet transaction routes
+app.use('/api/wallet-transactions', protect, walletTransactionsRoute)
 
 app.get("/", (req, res) => {
   res.send("ES Module Backend Running");
