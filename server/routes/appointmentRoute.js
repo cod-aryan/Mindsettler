@@ -1,7 +1,7 @@
 import express from 'express';
-import { bookSession, getMyAppointments, updateStatus } from '../controllers/appointmentController.js';
+import { bookSession, updateStatus, getMyAppointments } from '../controllers/appointmentController.js';
 import { protect } from '../middlewares/userMiddleware.js';
-import { consultant } from '../middlewares/consultantMiddleware.js';
+import { admin } from '../middlewares/adminMiddleware.js';
 
 const router = express.Router();
 
@@ -9,9 +9,9 @@ const router = express.Router();
 router.use(protect);
 // User routes
 router.post('/book', bookSession);
-router.get('/my-sessions', getMyAppointments);
 
-// Consultant only route
-router.patch('/status/:id', consultant, updateStatus);
+// Admin only route
+router.patch('/status/:id', admin, updateStatus);
+router.get('/my-sessions', getMyAppointments);
 
 export default router;

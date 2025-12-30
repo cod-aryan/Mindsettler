@@ -58,7 +58,7 @@ const BookingPage = () => {
     "5:50 PM",
     "6:00 PM",
     "6:10 PM",
-    "6:20 PM",
+    "6:20 PM"
   ];
   const morningSlots = allSlots.filter((slot) => slot.includes("AM"));
   const eveningSlots = allSlots.filter((slot) => slot.includes("PM"));

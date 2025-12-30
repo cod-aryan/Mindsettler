@@ -19,8 +19,10 @@ app.use(cookieParser()); // This populates req.cookies
 // Basic route to check if server is running
 import userRoute from "./routes/userRoute.js";
 import appointnentRoute from "./routes/appointmentRoute.js";
+import adminRoute from "./routes/adminRoute.js";
 app.use("/api/user", userRoute);
 app.use("/api/appointment", appointnentRoute);
+app.use("/api/admin", adminRoute);
 
 app.get("/", (req, res) => {
   res.send("ES Module Backend Running");

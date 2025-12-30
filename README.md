@@ -4,7 +4,7 @@ MindSettler is a psycho-education and mental well-being platform designed to hel
 
 ## 🚀 Project Features
 
-- **Role-Based Access Control (RBAC)**: Distinct flows for Patients, Admins, and Consultants.
+- **Role-Based Access Control (RBAC)**: Distinct flows for Patients, Admins.
 - **Session Booking System**: 60-minute structured sessions with manual UPI/Cash payment tracking.
 - **Admin Dashboard**: Backend-controlled slots with Approve/Reject functionality.
 - **Lead Generation**: Dedicated corporate and workshop inquiry system.
@@ -24,7 +24,7 @@ MindSettler is a psycho-education and mental well-being platform designed to hel
 
 | Method | Endpoint              | Access | Description                          |
 |--------|-----------------------|--------|--------------------------------------|
-| POST   | /api/auth/register    | Public | Register a new user (Patient/Consultant) |
+| POST   | /api/auth/register    | Public | Register a new user (Patient) |
 | POST   | /api/auth/login       | Public | Login and receive JWT token          |
 
 ### Appointments

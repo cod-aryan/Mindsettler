@@ -1,6 +1,7 @@
 import User from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import Appointment from "../models/appointmentModel.js";
 
 // Helper function to create JWT
 const generateToken = (id) => {
@@ -37,16 +38,14 @@ export const userSignup = async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "Lax",
     };
-
+    const userResponse = user.toObject();
+    delete userResponse.password; // Remove password from response
     res
       .cookie("token", token, cookieOptions)
       .status(200)
       .json({
         success: true,
-        user: {
-          name: user.name,
-          email: user.email,
-        },
+        user: userResponse,
       });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -73,15 +72,14 @@ export const login = async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "Lax",
     };
+    const userResponse = user.toObject();
+    delete userResponse.password; // Remove password from response
     res
       .cookie("token", token, cookieOptions)
       .status(200)
       .json({
         success: true,
-        user: {
-          name: user.name,
-          email: user.email,
-        },
+        user: userResponse,
       });
   } catch (error) {
     res.status(500).json({ message: error.message });

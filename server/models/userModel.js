@@ -28,10 +28,6 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'], 
         default: 'user' 
     },
-    isConsultant: { 
-        type: Boolean, 
-        default: false 
-    },
     // Required for MindSettler's "Confidentiality Policy" check
     hasAcceptedPolicy: { 
         type: Boolean, 
@@ -42,6 +38,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['Discovery', 'Awareness', 'Healing', 'Growth'],
         default: 'Discovery'
+    },
+    walletBalance: {
+        type: Number,
+        default: 0,
+        min: 0
     }
 }, { timestamps: true });
 

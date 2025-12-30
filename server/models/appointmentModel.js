@@ -1,44 +1,43 @@
 import mongoose from "mongoose";
 
+/**
+ * Tracks specific booking details. Payment info is linked via WalletTransaction.
+ */
 const appointmentSchema = new mongoose.Schema(
   {
-    // Link to the user who is booking
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    consultant: {
+    availabilityRef: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null, // Remains null until an admin accepts/is assigned
+      ref: "Availability",
+      required: true,
     },
-    sessionType: { type: String, enum: ["Online", "Offline"], required: true },
-    date: { type: Date, required: true },
+    therapyType: { type: String, required: true },
+    sessionType: { 
+      type: String, 
+      enum: ["online", "offline"], 
+      required: true 
+    },
     timeSlot: { type: String, required: true },
-    // Strictly mandated 60-minute duration
-    duration: {
-      type: Number,
-      default: 60,
-    },
-    // Backend-controlled appointment status
+    notes: { type: String, trim: true },
     status: {
       type: String,
-      enum: ["Pending", "Confirmed", "Rejected"],
+      enum: ["Pending", "Confirmed", "Rejected", "Completed"],
       default: "Pending",
-    },
-    // Manual payment tracking as there is no gateway
-    paymentMethod: {
-      type: String,
-      enum: ["UPI", "Cash"],
-      required: true,
     },
     isPaid: {
       type: Boolean,
-      default: false,
+      default: false, // Will be set to true immediately if paid via Wallet
     },
+    walletTransactionRef: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "WalletTransaction"
+    }
   },
   { timestamps: true }
-); // Tracks when booking was created
+);
 
 export default mongoose.model("Appointment", appointmentSchema);
