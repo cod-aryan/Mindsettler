@@ -167,6 +167,7 @@ const WalletRequestsView = () => {
           <tr>
             <th className="p-5 text-xs font-black text-slate-500 uppercase">#</th>
             <th className="p-5 text-xs font-black text-slate-500 uppercase">User</th>
+            <th className="p-5 text-xs font-black text-slate-500 uppercase">Transaction ID (UTR)</th>
             <th className="p-5 text-xs font-black text-slate-500 uppercase">Amount</th>
             <th className="p-5 text-xs font-black text-slate-500 uppercase text-center">Actions</th>
           </tr>
@@ -175,13 +176,36 @@ const WalletRequestsView = () => {
           {requests.map((req, idx) => (
             <tr key={req._id} className="border-b last:border-0 hover:bg-slate-50/50 transition-all">
               <td className="p-5 text-sm font-bold text-slate-400">{idx + 1}</td>
-              <td className="p-5 font-bold text-slate-800">{req.user?.name}</td>
+              <td className="p-5 font-bold text-slate-800">
+                <div className="flex flex-col">
+                  <span>{req.user?.name}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{req.user?.email}</span>
+                </div>
+              </td>
+              {/* TRANSACTION ID COLUMN */}
+              <td className="p-5">
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-slate-100 text-[#3F2965] rounded-lg font-mono text-xs font-bold border border-slate-200">
+                    {req.transactionId || "N/A"}
+                  </span>
+                </div>
+              </td>
               <td className="p-5 font-black text-[#Dd1764]">₹{req.amount}</td>
               <td className="p-5 flex justify-center gap-2">
-                <button disabled={procId === req._id} onClick={() => handleAction(req._id, "reject")} className="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100">
+                <button 
+                  disabled={procId === req._id} 
+                  onClick={() => handleAction(req._id, "reject")} 
+                  className="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                  title="Reject Request"
+                >
                   {procId === req._id ? <Loader2 size={18} className="animate-spin" /> : <X size={18} />}
                 </button>
-                <button disabled={procId === req._id} onClick={() => handleAction(req._id, "approve")} className="p-2 text-white bg-[#3F2965] rounded-lg hover:opacity-90">
+                <button 
+                  disabled={procId === req._id} 
+                  onClick={() => handleAction(req._id, "approve")} 
+                  className="p-2 text-white bg-[#3F2965] rounded-lg hover:opacity-90 transition-opacity shadow-md"
+                  title="Approve Request"
+                >
                   {procId === req._id ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                 </button>
               </td>
@@ -189,6 +213,11 @@ const WalletRequestsView = () => {
           ))}
         </tbody>
       </table>
+      {requests.length === 0 && (
+        <div className="p-20 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">
+          No pending wallet requests
+        </div>
+      )}
     </div>
   );
 };
