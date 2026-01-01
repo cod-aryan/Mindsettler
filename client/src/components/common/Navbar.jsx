@@ -31,6 +31,7 @@ const Navbar = () => {
     navLinks.push({ name: "Login", href: "/auth" });
   } else {
     if (user.role === "admin") navLinks.push({ name: "Admin", href: "/admin" });
+    else navLinks.push({ name: "Profile", href: "/profile" });
     navLinks.push({ name: "Logout", href: "/logout" });
   }
 

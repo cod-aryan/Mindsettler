@@ -24,7 +24,7 @@ function App() {
         <Route path="/booking" element={<BookingPage/>}/>
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/corporate" element={<CorporateServices/>}/>
-        {user && <Route path="/profile" element={<UserProfile />} />}
+        {user && user.role==="user" && <Route path="/profile" element={<UserProfile />} />}
         {!user && <Route path="/auth" element={<AuthPage />} />}
         <Route path="/logout" element={<Logout />} />
         {/* GROUP 2: Admin Pages (No Public Navbar) */}

@@ -15,7 +15,7 @@ const Logout = () => {
         console.error(error);
       } finally {
         setUser(null);
-        navigate("/", { replace: true });
+        navigate("/auth", { replace: true });
       }
     };
 
