@@ -16,24 +16,28 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         trim: true
     },
+    phone: {
+        type: String,
+        unique: true,
+        trim: true,
+        match: [/^[0-9]{10}$/, 'Please add a valid 10-digit phone number']
+    },
     password: { 
         type: String, 
         required: [true, 'Please add a password'], 
         minlength: 6, 
         maxlength: 128,
-        select: false // Won't return password in queries by default
+        select: false 
     },
     role: { 
         type: String, 
         enum: ['user', 'admin'], 
         default: 'user' 
     },
-    // Required for MindSettler's "Confidentiality Policy" check
     hasAcceptedPolicy: { 
         type: Boolean, 
         default: false 
     },
-    // To track the user's mental wellness journey progress
     journeyStatus: {
         type: String,
         enum: ['Discovery', 'Awareness', 'Healing', 'Growth'],

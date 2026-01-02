@@ -9,8 +9,8 @@ import Appointment from '../models/appointmentModel.js';
 
 export const setAvailability = async (req, res) => {
     try {
-        const { date, slots } = req.body;
-
+        let { date, slots } = req.body;
+        slots = Array.isArray(slots) ? slots : JSON.parse(slots);
         // Format slots into the object structure required by the schema
         const formattedSlots = slots.map(time => ({
             time,
@@ -38,7 +38,7 @@ export const setAvailability = async (req, res) => {
 export const getPendingAppointments = async (req, res) => {
     try {
         const appointments = await Appointment.find({ status:"confirmed" })
-            .populate('user', 'name email')
+            .populate('user', 'name email phone')
             .sort({ date: 1, timeSlot: 1 });
 
         res.status(200).json({ success: true, count:appointments.length, data: appointments });

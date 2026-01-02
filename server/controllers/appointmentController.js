@@ -149,3 +149,42 @@ export const getMyAppointments = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+export const getAvailability = async (req, res) => {
+  try {
+    const { date } = req.query;
+
+    if (!date) return res.status(400).json({ success: false, message: "Date is required" });
+
+    // 1. Normalize dates
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return res.status(400).json({ success: false, message: "Past dates are invalid" });
+    }
+
+    // 2. Find availability for the date
+    const availability = await Availability.findOne({ date, isActive: true });
+
+    if (!availability) {
+      return res.status(404).json({ success: false, message: "No slots published" });
+    }
+
+    // 3. Filter for slots that are NOT booked
+    // Based on your schema: slots: [{ time: "9:00 AM", isBooked: false }]
+    const availableSlots = availability.slots
+      .filter(slot => !slot.isBooked)
+      .map(slot => slot.time); // Convert objects back to strings for the frontend
+
+    return res.status(200).json({ 
+      success: true,
+      data: { slots: availableSlots, availabilityId: availability._id } 
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};

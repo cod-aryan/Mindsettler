@@ -20,7 +20,11 @@ import {
   KeyRound,
   Save,
   Lock,
-  TrendingUp
+  TrendingUp,
+  Info,
+  BrainCircuit,
+  Video,
+  MessageSquare
 } from "lucide-react";
 import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -186,7 +190,7 @@ const WalletRequestsView = () => {
               <td className="p-5">
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 bg-slate-100 text-[#3F2965] rounded-lg font-mono text-xs font-bold border border-slate-200">
-                    {req.transactionId || "N/A"}
+                    {req.transactionId.toUpperCase() || "N/A"}
                   </span>
                 </div>
               </td>
@@ -227,54 +231,185 @@ const AppointmentsView = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
+  
+  // State for the Details Modal
+  const [selectedApp, setSelectedApp] = useState(null);
 
   useEffect(() => {
-    API.get("/admin/pending-appointments").then(res => {
-      setAppointments(res.data.data || []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    API.get("/admin/pending-appointments")
+      .then((res) => {
+        setAppointments(res.data.data || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const updateStatus = async (id, status) => {
     setActionId(id);
     try {
       await API.patch(`/appointment/status/${id}`, { status });
-      setAppointments(prev => prev.filter(app => app._id !== id));
-    } catch (e) { alert("Failed to update status"); }
-    finally { setActionId(null); }
+      setAppointments((prev) => prev.filter((app) => app._id !== id));
+      if (selectedApp?._id === id) setSelectedApp(null); // Close modal if open
+    } catch (e) {
+      alert("Failed to update status");
+    } finally {
+      setActionId(null);
+    }
   };
 
-  if (loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-[#Dd1764]" size={40} /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-20">
+        <Loader2 className="animate-spin text-[#Dd1764]" size={40} />
+      </div>
+    );
 
   return (
-    <div className="bg-white rounded-3xl border shadow-sm overflow-hidden animate-in fade-in duration-500">
-      <table className="w-full text-left">
-        <thead className="bg-slate-50 border-b">
-          <tr>
-            <th className="p-5 text-xs font-black text-slate-500 uppercase">#</th>
-            <th className="p-5 text-xs font-black text-slate-500 uppercase">Client</th>
-            <th className="p-5 text-xs font-black text-slate-500 uppercase">Schedule</th>
-            <th className="p-5 text-xs font-black text-slate-500 uppercase text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {appointments.map((app, idx) => (
-            <tr key={app._id} className="border-b last:border-0 hover:bg-slate-50/50">
-              <td className="p-5 text-sm font-bold text-slate-400">{idx + 1}</td>
-              <td className="p-5 font-bold text-slate-800">{app.user?.name}</td>
-              <td className="p-5 text-xs font-bold text-[#3F2965]">{app.date} | {app.timeSlot}</td>
-              <td className="p-5 flex justify-center gap-2">
-                <button disabled={actionId === app._id} onClick={() => updateStatus(app._id, "rejected")} className="px-4 py-2 text-[10px] font-black uppercase text-red-600 bg-red-50 rounded-xl hover:bg-red-100">
-                    {actionId === app._id ? <Loader2 size={14} className="animate-spin" /> : "Reject"}
-                </button>
-                <button disabled={actionId === app._id} onClick={() => updateStatus(app._id, "completed")} className="px-4 py-2 text-[10px] font-black uppercase text-white bg-green-500 rounded-xl shadow-md hover:bg-green-600">
-                    {actionId === app._id ? <Loader2 size={14} className="animate-spin" /> : "Complete"}
-                </button>
-              </td>
+    <div className="relative">
+      <div className="bg-white rounded-3xl border shadow-sm overflow-hidden animate-in fade-in duration-500">
+        <table className="w-full text-left">
+          <thead className="bg-slate-50 border-b">
+            <tr>
+              <th className="p-5 text-xs font-black text-slate-500 uppercase">#</th>
+              <th className="p-5 text-xs font-black text-slate-500 uppercase">Client Details</th>
+              <th className="p-5 text-xs font-black text-slate-500 uppercase text-center">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {appointments.length === 0 ? (
+              <tr>
+                <td colSpan="3" className="p-10 text-center text-slate-400 font-medium">No pending appointments.</td>
+              </tr>
+            ) : (
+              appointments.map((app, idx) => (
+                <tr key={app._id} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
+                  <td className="p-5 text-sm font-bold text-slate-400">{idx + 1}</td>
+                  
+                  <td className="p-5">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-slate-800 text-sm">{app.user?.name}</p>
+                        {/* VIEW DETAILS BUTTON */}
+                        <button 
+                          onClick={() => setSelectedApp(app)}
+                          className="p-1 rounded-full hover:bg-slate-200 text-slate-400 transition-colors"
+                          title="View Full Details"
+                        >
+                          <Info size={14} />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <Mail size={12} />
+                        <span className="text-[11px] font-medium">{app.user?.email}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[#Dd1764]">
+                        <Phone size={12} />
+                        <span className="text-[11px] font-bold">{app.user?.phone || "N/A"}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="p-5">
+                    <div className="flex justify-center gap-2">
+                      <button
+                        disabled={actionId === app._id}
+                        onClick={() => updateStatus(app._id, "rejected")}
+                        className="px-4 py-2 text-[10px] font-black uppercase text-red-600 bg-red-50 rounded-xl hover:bg-red-100 disabled:opacity-50"
+                      >
+                        {actionId === app._id ? <Loader2 size={14} className="animate-spin" /> : "Reject"}
+                      </button>
+                      <button
+                        disabled={actionId === app._id}
+                        onClick={() => updateStatus(app._id, "completed")}
+                        className="px-4 py-2 text-[10px] font-black uppercase text-white bg-green-500 rounded-xl shadow-md hover:bg-green-600 disabled:opacity-50"
+                      >
+                        {actionId === app._id ? <Loader2 size={14} className="animate-spin" /> : "Complete"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* --- APPOINTMENT DETAILS MODAL --- */}
+      {selectedApp && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-6 bg-slate-50 border-b flex justify-between items-center">
+              <div>
+                <h3 className="font-black text-[#3F2965] uppercase text-xs tracking-widest">Appointment Summary</h3>
+                <p className="text-xs font-bold text-slate-400 mt-0.5">ID: {selectedApp._id.toUpperCase()}</p>
+              </div>
+              <button onClick={() => setSelectedApp(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-400 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-8 space-y-6">
+              {/* Therapy Type */}
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-purple-50 text-[#3F2965] rounded-2xl"><BrainCircuit size={20} /></div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-tighter">Therapy Mode</p>
+                  <p className="text-sm font-bold text-slate-700">{selectedApp.therapyType}</p>
+                </div>
+              </div>
+
+              {/* Schedule & Format */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-pink-50 text-[#Dd1764] rounded-lg"><Clock size={16} /></div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-300 uppercase">Time</p>
+                    <p className="text-xs font-bold text-slate-700">{selectedApp.timeSlot}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-slate-100 text-slate-500 rounded-lg">
+                    {selectedApp.sessionType === "online" ? <Video size={16} /> : <MapPin size={16} />}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-300 uppercase">Format</p>
+                    <p className="text-xs font-bold text-slate-700 capitalize">{selectedApp.sessionType}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes Section */}
+              <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
+                <div className="flex items-center gap-2 mb-2 text-[#3F2965]">
+                  <MessageSquare size={14} />
+                  <p className="text-[10px] font-black uppercase">Client Notes</p>
+                </div>
+                <p className="text-sm text-slate-600 leading-relaxed italic">
+                  "{selectedApp.notes || "No additional notes provided by the client."}"
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 bg-slate-50 border-t flex gap-3">
+              <button 
+                onClick={() => updateStatus(selectedApp._id, "rejected")}
+                className="flex-1 py-3 bg-white border text-red-600 font-black text-[10px] uppercase rounded-xl hover:bg-red-50 transition-colors"
+              >
+                Reject Request
+              </button>
+              <button 
+                onClick={() => updateStatus(selectedApp._id, "completed")}
+                className="flex-1 py-3 bg-[#3F2965] text-white font-black text-[10px] uppercase rounded-xl shadow-lg hover:opacity-90 transition-opacity"
+              >
+                Approve & Complete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

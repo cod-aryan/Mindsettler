@@ -1,3 +1,5 @@
+import { json } from "express";
+
 export const admin = (req, res, next) => {
     if (req.user && req.user.role === 'admin') {
         next();
@@ -12,13 +14,17 @@ export const admin = (req, res, next) => {
  * Ensures YYYY-MM-DD format, 24h time format, and logical date constraints
  */
 export const validateAvailability = (req, res, next) => {
-    const { date, slots } = req.body;
-
+    let { date, slots } = req.body;
     // 1. Basic Existence Check
     if (!date || !slots) {
         return res.status(400).json({ 
             message: "Missing required fields. Both 'date' and 'slots' are required." 
         });
+    }
+    try {
+        slots = Array.isArray(slots) ? slots : JSON.parse(slots);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 
     // 2. Date Format Validation (YYYY-MM-DD)
