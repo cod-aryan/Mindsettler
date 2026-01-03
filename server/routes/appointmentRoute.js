@@ -1,5 +1,5 @@
 import express from 'express';
-import { bookSession, updateStatus, getMyAppointments, getAvailability } from '../controllers/appointmentController.js';
+import { bookSession, updateStatus, getMyAppointments, getAvailability, deleteAvailability, flushAvailability } from '../controllers/appointmentController.js';
 import { protect } from '../middlewares/userMiddleware.js';
 import { admin } from '../middlewares/adminMiddleware.js';
 import { body, validationResult } from 'express-validator';
@@ -36,6 +36,7 @@ router.post(
 // Admin only route
 router.patch('/status/:id', admin, updateStatus);
 router.get('/my-sessions', getMyAppointments);
-router.get('/get-availability', getAvailability)
-
+router.get('/get-availability', getAvailability);
+router.delete('/delete-availability/:id', admin, deleteAvailability);
+router.delete('/flush-availability', admin, flushAvailability);
 export default router;

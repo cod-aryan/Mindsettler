@@ -25,7 +25,9 @@ import {
   BrainCircuit,
   Video,
   MessageSquare,
-  Calendar
+  Calendar,
+  Trash2,
+  Power
 } from "lucide-react";
 import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -417,40 +419,44 @@ const AppointmentsView = () => {
 
 // --- 4. TIME SLOTS VIEW ---
 const TimeSlotsView = () => {
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const today = new Date().toISOString().split("T")[0];
+  const [date, setDate] = useState(today);
   const [newSlot, setNewSlot] = useState("");
   const [slots, setSlots] = useState([]);
+  
+  // Status States
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [flushing, setFlushing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [availabilityId, setAvailabilityId] = useState(null);
 
-  // --- FETCH EXISTING SLOTS FOR SELECTED DATE ---
+  // Modal Control States
+  const [modalType, setModalType] = useState(null); // 'flush' | 'delete_all'
+
   const checkExistingAvailability = async () => {
     if (!date) return;
     setFetching(true);
+    setErrorMsg("");
     try {
-      // Using your existing get-availability endpoint
       const res = await API.get(`/appointment/get-availability?date=${date}`);
-      
-      // If slots exist, the backend returns an array of objects/strings
-      // We extract the 'time' property to match the frontend state
+      setAvailabilityId(res.data.data?.availabilityId || null);
       const existingSlots = res.data.data?.slots || [];
       const formattedSlots = existingSlots.map(s => typeof s === 'object' ? s.time : s);
-      
       setSlots(formattedSlots.sort());
     } catch (e) {
-      // If 404, it means no slots are set yet, which is fine
       if (e.response?.status === 404) {
         setSlots([]);
+        setAvailabilityId(null);
       } else {
-        console.error("Fetch error:", e);
+        setErrorMsg("Failed to fetch existing schedule. Please check connection.");
       }
     } finally {
       setFetching(false);
     }
   };
 
-  // Trigger fetch whenever the date changes
   useEffect(() => {
     if (date) checkExistingAvailability();
   }, [date]);
@@ -464,27 +470,91 @@ const TimeSlotsView = () => {
 
   const publishAvailability = async () => {
     setLoading(true);
+    setErrorMsg("");
     try {
-      // The backend logic provided earlier handles overwriting/updating the date
       await API.post("/admin/set-availability", { date, slots });
       setShowSuccess(true);
-      setSlots([]); setDate("");
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (e) { 
-        alert("Error: " + (e.response?.data?.message || "Failed")); 
+      setErrorMsg(e.response?.data?.message || "Failed to update portal schedule."); 
     } finally { 
-        setLoading(false); 
+      setLoading(false); 
+    }
+  };
+
+  const handleDeleteTrigger = (slotToRemove) => {
+    const updatedSlots = slots.filter(t => t !== slotToRemove);
+    // If user removes the very last slot and a record already exists in DB
+    if (updatedSlots.length === 0 && availabilityId) {
+      setModalType('delete_all');
+    } else {
+      setSlots(updatedSlots);
+    }
+  };
+
+  const confirmDeleteAll = async () => {
+    setModalType(null);
+    setLoading(true);
+    try {
+      await API.delete(`/appointment/delete-availability/${availabilityId}`);
+      setSlots([]);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (e) {
+      setErrorMsg("Error: " + (e.response?.data?.message || "Delete failed"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFlush = async () => {
+    setModalType(null);
+    setFlushing(true);
+    try {
+      await API.delete("/appointment/flush-availability");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      if (date) await checkExistingAvailability();
+    } catch (e) {
+      setErrorMsg("Error: " + (e.response?.data?.message || "Flush failed"));
+    } finally {
+      setFlushing(false);
     }
   };
 
   return (
     <div className="relative bg-white p-8 rounded-3xl border shadow-sm space-y-6 animate-in slide-in-from-bottom-4 duration-500 overflow-hidden">
+      
+      {/* --- SUCCESS OVERLAY --- */}
       {showSuccess && (
-        <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-20 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
-          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-green-100">
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-[60] flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
+          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4 shadow-xl">
             <Check size={40} strokeWidth={3} className="animate-bounce" />
           </div>
-          <h3 className="text-2xl font-black text-[#3F2965]">Schedule Updated!</h3>
+          <h3 className="text-2xl font-black text-[#3F2965]">Schedule Synced!</h3>
+        </div>
+      )}
+
+      {/* --- INTERACTIVE CONFIRMATION MODAL --- */}
+      {modalType && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} />
+              </div>
+              <h3 className="text-xl font-black text-[#3F2965]">Confirm Action</h3>
+              <p className="text-sm font-medium text-slate-500 mt-2 leading-relaxed">
+                {modalType === 'flush' 
+                  ? "This will remove all availability records dated before today. This cannot be undone." 
+                  : "Removing the final slot will delete the entire schedule for this specific date."}
+              </p>
+            </div>
+            <div className="p-6 bg-slate-50 flex gap-3">
+              <button onClick={() => setModalType(null)} className="flex-1 py-4 text-xs font-black uppercase text-slate-400 bg-white border rounded-2xl hover:bg-slate-100 transition-all">Cancel</button>
+              <button onClick={modalType === 'flush' ? handleFlush : confirmDeleteAll} className="flex-1 py-4 text-xs font-black uppercase text-white bg-red-500 rounded-2xl shadow-lg hover:bg-red-600 transition-all">Execute</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -493,27 +563,35 @@ const TimeSlotsView = () => {
         <h2 className="font-black text-xs uppercase tracking-widest text-slate-400">Manage Availability</h2>
       </div>
 
+      {/* ERROR BANNER */}
+      {errorMsg && (
+        <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-start gap-3 animate-in fade-in">
+          <AlertCircle className="shrink-0 mt-0.5" size={18} />
+          <p className="text-sm font-bold flex-1">{errorMsg}</p>
+          <button onClick={() => setErrorMsg("")}><X size={18}/></button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="relative">
           <input 
             type="date" 
             value={date} 
             onChange={(e) => setDate(e.target.value)} 
-            className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold focus:ring-2 focus:ring-[#3F2965]" 
+            className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold text-[#3F2965] focus:ring-2 focus:ring-[#3F2965] outline-none" 
           />
           {fetching && <Loader2 size={16} className="absolute right-4 top-5 animate-spin text-[#3F2965]" />}
         </div>
-        
         <div className="flex gap-2">
           <input 
             type="time" 
             value={newSlot} 
             onChange={(e) => setNewSlot(e.target.value)} 
-            className="flex-1 p-4 bg-slate-50 border-none rounded-2xl font-bold focus:ring-2 focus:ring-[#3F2965]" 
+            className="flex-1 p-4 bg-slate-50 border-none rounded-2xl font-bold text-[#3F2965] focus:ring-2 focus:ring-[#3F2965] outline-none" 
           />
           <button 
             onClick={addSlot} 
-            disabled={!date}
+            disabled={!date} 
             className="p-4 bg-[#3F2965] text-white rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-30"
           >
             <Plus size={20} />
@@ -523,35 +601,33 @@ const TimeSlotsView = () => {
 
       <div className="space-y-3">
         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-            {slots.length > 0 ? "Current Slots for this date" : "No slots added yet"}
+          {slots.length > 0 ? "Current Slots" : "No slots added yet"}
         </p>
         <div className="flex flex-wrap gap-3 p-6 bg-slate-50 rounded-2xl border-2 border-dashed min-h-25">
-            {slots.map(s => (
+          {slots.map(s => (
             <div key={s} className="bg-white text-[#3F2965] px-5 py-2 rounded-2xl font-black border shadow-sm flex items-center gap-3 animate-in fade-in zoom-in">
-                {s} 
-                <X 
-                    size={14} 
-                    className="cursor-pointer text-red-300 hover:text-red-500 transition-colors" 
-                    onClick={() => setSlots(slots.filter(t => t !== s))} 
-                />
+              {s} <X size={14} className="cursor-pointer text-red-300 hover:text-red-500 transition-colors" onClick={() => handleDeleteTrigger(s)} />
             </div>
-            ))}
+          ))}
         </div>
       </div>
 
-      <button 
-        disabled={loading || !date} 
-        onClick={publishAvailability} 
-        className="w-full py-5 bg-[#Dd1764] text-white font-black rounded-2xl shadow-xl flex justify-center items-center gap-3 hover:opacity-90 disabled:opacity-30 transition-all"
-      >
-        {loading ? <Loader2 className="animate-spin" size={24} /> : <><TrendingUp size={20} /> Update Portal Schedule</>}
-      </button>
-      
-      {date && !fetching && slots.length === 0 && (
-          <p className="text-center text-[10px] font-bold text-amber-500 uppercase">
-              Note: Publishing with 0 slots will clear the schedule for this day.
-          </p>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <button 
+          disabled={flushing} 
+          onClick={() => setModalType('flush')} 
+          className="md:col-span-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl border-2 border-slate-200 flex justify-center items-center gap-2 hover:bg-slate-200 disabled:opacity-30 transition-all"
+        >
+          {flushing ? <Loader2 className="animate-spin" size={20} /> : <><Trash2 size={18} /> Flush Past</>}
+        </button>
+        <button 
+          disabled={loading || !date} 
+          onClick={publishAvailability} 
+          className="md:col-span-2 py-5 bg-[#Dd1764] text-white font-black rounded-2xl shadow-xl flex justify-center items-center gap-3 hover:opacity-90 active:scale-[0.98] disabled:opacity-30 transition-all"
+        >
+          {loading ? <Loader2 className="animate-spin" size={24} /> : <><TrendingUp size={20} /> Broadcast Schedule</>}
+        </button>
+      </div>
     </div>
   );
 };

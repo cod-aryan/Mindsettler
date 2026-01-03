@@ -188,3 +188,33 @@ export const getAvailability = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+
+export const deleteAvailability = async (req, res) => {
+  try {
+    const availability = await Availability.findById(req.params.id);
+
+    if (!availability) {
+      return res.status(404).json({ message: "Availability not found" });
+    }
+    await availability.deleteOne();
+    res.status(200).json({ success: true, message: "Availability deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const flushAvailability = async (req, res) => {
+  try {
+    // Deleting all availability entries before today
+    const today = new Date().toISOString().split("T")[0];
+    const result = await Availability.deleteMany({ date: { $lt: today } });
+
+    res.status(200).json({ 
+      success: true, 
+      message: `Flushed ${result.deletedCount} past availability entries successfully` 
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
