@@ -33,15 +33,16 @@ const Navbar = () => {
   }
 
   return (
-    <div className="fixed top-6 z-50 w-full flex justify-center">
+    <div className="fixed top-6 z-50 w-full flex justify-center border">
       <nav
-        className={`w-full max-w-7xl flex items-center justify-between px-10 py-4 
+        className={`w-[90%] flex items-center justify-between px-10 py-4
                     rounded-full transition-all duration-500 ease-in-out
                     ${
                       isScrolled
                         ? "bg-white/70 backdrop-blur-xl border-black/10 shadow-xl"
                         : "bg-white/10 backdrop-blur-lg border-white/30 shadow-lg"
-                    }`}
+                    }
+                    `}
       >
         <div className="flex items-center">
           <Link to="/" className="flex items-center">
