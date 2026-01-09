@@ -1,5 +1,6 @@
 import { Availability } from '../models/adminModel.js';
 import Appointment from '../models/appointmentModel.js';
+import User from '../models/userModel.js';
 
 /**
  * @desc    Create/Update availability slots for a specific date
@@ -45,4 +46,33 @@ export const getPendingAppointments = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+};
+
+
+export const profileUpdate = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { name, phone, email } = req.body;
+    const updates = {name, phone, email};
+
+    // check for email
+    if (email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already in use by another account." });
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updates, {
+      new: true,
+      runValidators: true,
+    }).select("-password"); // Exclude password from response
+
+    res.status(200).json({
+      success: true,
+      user: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

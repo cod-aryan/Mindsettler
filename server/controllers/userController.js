@@ -199,3 +199,24 @@ export const sendContactEmail = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error: Could not send email." });
   }
 };
+
+
+export const profileUpdate = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { name, phone } = req.body;
+    const updates = {name, phone};
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updates, {
+      new: true,
+      runValidators: true,
+    }).select("-password"); // Exclude password from response
+
+    res.status(200).json({
+      success: true,
+      user: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

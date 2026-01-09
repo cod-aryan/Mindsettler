@@ -4,13 +4,11 @@ import {
   User,
   Wallet,
   LogOut,
-  Bell,
   Plus,
   Loader2,
   Save,
   CreditCard,
   CalendarCheck,
-  Camera,
   X,
   AlertCircle,
   ArrowDownLeft,
@@ -23,12 +21,11 @@ import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
 // --- 1. USER PROFILE VIEW ---
-const UserProfileView = ({ user }) => {
+const UserProfileView = ({ user, setUser }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || "",
-    email: user?.email || "",
     phone: user?.phone || "",
   });
 
@@ -36,11 +33,13 @@ const UserProfileView = ({ user }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await API.patch("/users/profile", formData);
+      const response = await API.patch("/user/profile", formData);
+      user = response.data.user;
+      setUser(user);
       setIsEditing(false);
       alert("Profile updated successfully!");
     } catch (err) {
-      alert(err.response?.data?.message || "Update failed");
+      alert(err.response?.data?.message || err.response?.data?.errors || "Update failed");
     } finally {
       setLoading(false);
     }
@@ -53,13 +52,10 @@ const UserProfileView = ({ user }) => {
           <div className="w-24 h-24 rounded-full bg-slate-50 border-2 border-[#3F2965]/10 flex items-center justify-center text-[#3F2965] text-3xl font-bold">
             {formData.name?.charAt(0) || "U"}
           </div>
-          <button className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-md border border-slate-100 text-[#Dd1764]">
-            <Camera size={14} />
-          </button>
         </div>
         <div className="flex-1 text-center md:text-left">
           <h2 className="text-2xl font-bold text-[#3F2965]">{formData.name}</h2>
-          <p className="text-slate-400 text-sm font-medium">{formData.email}</p>
+          <p className="text-slate-400 text-sm font-medium">{user.email}</p>
           <div className="mt-3 flex gap-2 justify-center md:justify-start">
             <span className="px-3 py-1 bg-pink-50 text-[#Dd1764] text-[10px] font-bold uppercase rounded-full tracking-wider">
               Member
@@ -98,7 +94,7 @@ const UserProfileView = ({ user }) => {
             </label>
             <input
               disabled
-              value={formData.email}
+              value={user.email}
               className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium opacity-60 cursor-not-allowed"
             />
           </div>
@@ -487,7 +483,7 @@ const MyBookingsView = () => {
 const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState("Profile");
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
 
   useEffect(() => {
     const syncTabFromHash = () => {
@@ -547,18 +543,11 @@ const UserDashboard = () => {
           <h1 className="text-lg font-bold text-[#3F2965] tracking-tight">
             {activeTab}
           </h1>
-          <div className="flex items-center gap-5">
-            <div className="relative text-slate-400 hover:text-[#3F2965] cursor-pointer">
-              <Bell size={20} />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#Dd1764] rounded-full border-2 border-white" />
-            </div>
-            <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200" />
-          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
           <div className="max-w-4xl mx-auto">
-            {activeTab === "Profile" && <UserProfileView user={user} />}
+            {activeTab === "Profile" && <UserProfileView user={user} setUser={setUser} />}
             {activeTab === "My Wallet" && <WalletView user={user} />}
             {activeTab === "My Bookings" && <MyBookingsView />}
           </div>
