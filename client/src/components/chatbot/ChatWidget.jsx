@@ -4,6 +4,7 @@ import {
   Sparkles, ShieldCheck 
 } from "lucide-react";
 import API from "../../api/axios.js"; // Ensure this ;has withCredentials: true
+import botAvatar from "../../assets/icons/ChatBotmini-removebg-preview.png";
 
 const chatId = crypto.randomUUID();
 const ChatWidget = ({ user }) => {
@@ -153,7 +154,13 @@ const ChatWidget = ({ user }) => {
           isOpen ? "bg-slate-800 rotate-90" : "bg-linear-to-tr from-[#3F2965] to-[#Dd1764]"
         }`}
       >
-        {isOpen ? <X size={30} /> : <MessageCircle size={30} />}
+        {isOpen ? <X size={30} /> : (
+          <img 
+            src={botAvatar} 
+            alt="MindSettler Bot" 
+            className="w-full h-full object-cover scale-110" 
+          />
+        )}
         
         {/* Unread notification dot */}
         {!isOpen && (
