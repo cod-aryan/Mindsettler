@@ -11,15 +11,12 @@ import {
   Plus,
   Loader2,
   UserCircle,
-  Bell,
   Mail,
   Edit3,
   Camera,
   User,
   Phone,
-  KeyRound,
   Save,
-  Lock,
   TrendingUp,
   Info,
   BrainCircuit,
@@ -34,7 +31,7 @@ import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
 // --- 1. ADMIN PROFILE VIEW ---
-const AdminProfileView = ({ user }) => {
+const AdminProfileView = ({ user, setUser }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   
@@ -52,11 +49,13 @@ const AdminProfileView = ({ user }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await API.patch("/users/profile", formData);
+      const response = await API.patch("/admin/profile", formData);
+      setUser(response.data.user);
       setIsEditing(false);
       alert("Profile updated successfully!");
     } catch (err) {
-      alert(err.response?.data?.message || "Update failed");
+      console.log(err);
+      alert(err.response?.data?.message || err.response?.data?.errors || "Update failed");
     } finally {
       setLoading(false);
     }
@@ -127,16 +126,6 @@ const AdminProfileView = ({ user }) => {
                 </button>
               )}
             </form>
-          </div>
-
-          <div className="bg-white p-8 md:p-10 rounded-[2.5rem] border shadow-sm">
-            <h4 className="text-lg font-black text-[#3F2965] mb-6 flex items-center gap-2"><Lock size={20} className="text-[#Dd1764]" /> Password & Security</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input type="password" placeholder="New Password" className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold focus:ring-2 focus:ring-[#3F2965]" />
-              <button className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all">
-                <KeyRound size={18} /> Update Password
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -689,7 +678,7 @@ const TimeSlotsView = () => {
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("Profile");
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
 
   const navItems = [
     { name: "Profile", icon: UserCircle },
@@ -743,15 +732,11 @@ const AdminDashboard = () => {
              </div>
              <h1 className="text-2xl font-black text-[#3F2965] uppercase tracking-tighter">{activeTab}</h1>
           </div>
-          <div className="flex items-center gap-6">
-            <Bell size={22} className="text-slate-300" />
-            <div className="w-10 h-10 rounded-full bg-[#3F2965] border-2 border-white shadow-sm" />
-          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-12 bg-slate-50/50">
           <div className="max-w-6xl mx-auto">
-            {activeTab === "Profile" && <AdminProfileView user={user} />}
+            {activeTab === "Profile" && <AdminProfileView user={user} setUser={setUser} />}
             {activeTab === "Wallet Requests" && <WalletRequestsView />}
             {activeTab === "Appointments" && <AppointmentsView />}
             {activeTab === "Time Slots" && <TimeSlotsView />}

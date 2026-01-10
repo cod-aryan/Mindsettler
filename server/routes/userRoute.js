@@ -1,21 +1,10 @@
 import express from "express";
-import { body, validationResult } from "express-validator";
-import { userSignup, login, forgotPassword, getMe, logout } from "../controllers/userController.js";
+import { body } from "express-validator";
+import { userSignup, login, forgotPassword, getMe, logout, sendContactEmail, profileUpdate } from "../controllers/userController.js";
 import { protect } from "../middlewares/userMiddleware.js";
+import { validate } from "../middlewares/validationMiddleware.js";
 
 const router = express.Router();
-
-// Middleware to catch validation errors
-const validate = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false, 
-      errors: errors.array().map(err => err.msg) 
-    });
-  }
-  next();
-};
 
 // --- VALIDATED ROUTES ---
 
@@ -54,5 +43,16 @@ router.post(
 router.get("/logout", protect, logout);
 
 router.get("/me", protect, getMe);
+router.post("/contact/send", sendContactEmail);
+router.patch("/profile", protect,
+  [
+    body("name")
+      .isLength({ min: 3, max: 50 })
+      .withMessage("Name must be between 3 and 50 characters"),
+    body("phone")
+      .matches(/^\d{10}$/)
+      .withMessage("Phone must be a 10 digit number"),
+  ],
+  validate, profileUpdate);
 
 export default router;

@@ -46,8 +46,6 @@ const JourneySection = () => {
       className="relative pt-5 overflow-hidden"
       // 3. Misty Valley Gradient Background
       style={{
-        // background: `radial-gradient(circle at 0% 0%, #f3f0ff 0%, #ffffff 50%), 
-        //              radial-gradient(circle at 100% 100%, #e0f2fe 0%, #ffffff 50%)`,
         backgroundColor: "#f3f1ff",
       }}
     >
@@ -136,15 +134,7 @@ const JourneySection = () => {
                     }}
                   />
 
-                  {/* Milestone Marker (River Dot) */}
-                  <div
-                    className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#E83E8C] shadow-[0_0_20px_rgba(232,62,140,1)] z-20
-            ${
-              step.side === "left"
-                ? "-right-12 md:-right-24"
-                : "-left-12 md:-left-24"
-            }`}
-                  />
+
 
                   {/* --- THE GLASS CARD --- */}
                   <div className="relative z-10 p-10 bg-white/30 backdrop-blur-2xl rounded-4xl border border-white/40 shadow-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2">

@@ -1,7 +1,9 @@
 import express from 'express';
 import { protect } from '../middlewares/userMiddleware.js';
-import { getPendingAppointments, setAvailability } from '../controllers/adminController.js';
+import { getPendingAppointments, setAvailability, profileUpdate } from '../controllers/adminController.js';
 import { admin, validateAvailability } from '../middlewares/adminMiddleware.js';
+import { body } from "express-validator";
+import { validate } from '../middlewares/validationMiddleware.js';
 
 const router = express.Router();
 
@@ -11,5 +13,15 @@ router.use(protect, admin);
 // User routes
 router.post('/set-availability', validateAvailability, setAvailability);
 router.get('/pending-appointments', getPendingAppointments);
+router.patch("/profile", protect,
+  [
+    body("name")
+      .isLength({ min: 3, max: 50 })
+      .withMessage("Name must be between 3 and 50 characters"),
+    body("phone")
+      .matches(/^\d{10}$/)
+      .withMessage("Phone must be a 10 digit number"),
+  ],
+  validate, profileUpdate);
 
 export default router;

@@ -1,13 +1,30 @@
 import express from "express";
-import { getPendingTransactions, getUserTransactions, approveTopup, createTransaction, rejectTopup } from '../controllers/walletTransactionController.js'
+import {
+  getPendingTransactions,
+  getUserTransactions,
+  approveTopup,
+  createTransaction,
+  rejectTopup,
+} from "../controllers/walletTransactionController.js";
 import { admin } from "../middlewares/adminMiddleware.js";
+import { body } from "express-validator";
+import { validate } from "../middlewares/validationMiddleware.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.get('/', admin, getPendingTransactions);
-router.get('/user-wallet-transactions', getUserTransactions);
-router.post('/create-transaction', createTransaction);
-router.patch('/approve-topup/:id', admin, approveTopup);
-router.patch('/reject-topup/:id', admin, rejectTopup);
+router.get("/", admin, getPendingTransactions);
+router.get("/user-wallet-transactions", getUserTransactions);
+router.post(
+  "/create-transaction",
+  [
+    body("transactionId")
+      .isLength({ min: 12, max: 12 })
+      .withMessage("Transaction ID must be 12 characters long"),
+  ],
+  validate,
+  createTransaction
+);
+router.patch("/approve-topup/:id", admin, approveTopup);
+router.patch("/reject-topup/:id", admin, rejectTopup);
 
-export default router
+export default router;
