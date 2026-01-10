@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import API from "../../api/axios.js"; // Ensure this ;has withCredentials: true
 
+const chatId = crypto.randomUUID();
 const ChatWidget = ({ user }) => {
   // const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -37,7 +38,7 @@ const ChatWidget = ({ user }) => {
 
     try {
       // API call to your protected backend route
-      const res = await API.post("/chat", { message: userText });
+      const res = await API.post("/chat", { message: userText, chatId });
       
       const { intent, reply } = res.data;
 

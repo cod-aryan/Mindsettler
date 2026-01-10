@@ -4,26 +4,48 @@ import { protect } from "../middlewares/userMiddleware.js";
 
 const router = express.Router();
 
+// Temporary in-memory store
+const tempChatMemory = new Map();
+
 router.post("/", protect, async (req, res) => {
-  const { message } = req.body;
-  const userName = req.user?.name.split(' ')[0] || "Friend";
+  const { message, chatId } = req.body;
+  const userName = req.user?.name?.split(" ")[0] || "Friend";
+
+  if (!chatId) {
+    return res.status(400).json({
+      intent: "GENERAL_CHAT",
+      reply: "Something went wrong. Please refresh and try again."
+    });
+  }
+
+  // Initialize memory for this chat session
+  if (!tempChatMemory.has(chatId)) {
+    tempChatMemory.set(chatId, []);
+  }
+
+  const history = tempChatMemory.get(chatId);
 
   try {
-    const ai = await geminiReply(message, userName);
+    const ai = await geminiReply(message, userName, history);
 
-    // If the user is venting (EMOTIONAL_SUPPORT), we add a motivational nudge
-    if (ai.intent === "EMOTIONAL_SUPPORT") {
-      ai.reply += ` It takes a lot of courage to share that, ${userName.split(' ')[0]}. Sometimes, having a dedicated hour with a professional can help untangle these thoughts. Would you like to see who is available today?`;
+    if (ai._history) {
+      tempChatMemory.set(chatId, ai._history);
+      delete ai._history;
     }
 
-    // If they agree to book
     if (ai.intent === "BOOK_SESSION") {
-      ai.reply = `I'm so glad you're prioritizing yourself, ${userName.split(' ')[0]}. I've opened the **'Time Slots'** for you. Which time feels right?`;
+      ai.reply =
+        `I'm really glad you're ready, ${userName}. ` +
+        `Let’s choose a time for your private 1 on 1 session.`;
     }
 
     res.json(ai);
   } catch (error) {
-    res.status(500).json({ reply: "I'm listening, but I hit a snag. Let's keep talking." });
+    console.error("Chat Route Error:", error);
+    res.status(500).json({
+      intent: "GENERAL_CHAT",
+      reply: `I'm here with you, ${userName}. Let's keep talking.`,
+    });
   }
 });
 
