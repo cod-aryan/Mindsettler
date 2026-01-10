@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Phone, Mail, MessageCircle, Instagram, Send } from "lucide-react";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
+import FAQSection from "../components/common/FAQ";
 
 const ContactPage = () => {
   const contactInfo = [
@@ -155,6 +156,7 @@ const ContactPage = () => {
         </div>
       </div>
       <div class="h-40 bg-linear-to-b from-[#f9fafc] to-[#fdfcf8]"></div>
+      <FAQSection />
       <Footer />
     </>
   );
