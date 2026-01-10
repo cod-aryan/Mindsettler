@@ -16,7 +16,7 @@ function Home() {
       <HeroSection />
       <div class="h-20 bg-linear-to-b from-[#6b5e5a]/30 to-[#f3f1ff]"></div>
       <JourneySection />
-      <div class="bg-linear-to-b from-[#f3f1ff] to-[#3F2965]/5"></div>
+      <div class="bg-linear-to-b from-[#f3f1ff] to-[#f2f0f5] h-20"></div>
       <MindSettlerSection />
       <StatsSection />
       <FAQ />

@@ -164,7 +164,7 @@ const WalletView = ({ user }) => {
       const res = await API.get("/transactions/user-wallet-transactions");
       setTransactions(res.data.data || []);
     } catch (err) {
-      alert(err.response?.data?.message || "Transaction failed");
+      alert(err.response?.data?.message || err.response?.data?.errors || "Transaction failed");
     } finally {
       setLoading(false);
     }
