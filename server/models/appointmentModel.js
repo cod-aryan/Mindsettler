@@ -35,7 +35,8 @@ const appointmentSchema = new mongoose.Schema(
     walletTransactionRef: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "WalletTransaction"
-    }
+    },
+    meetLink: { type: String }, // Google Meet link for online sessions
   },
   { timestamps: true }
 );

@@ -140,6 +140,7 @@ export const updateStatus = async (req, res) => {
 export const getMyAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find({ user: req.user._id })
+      .populate("availabilityRef")
       .sort({ createdAt: -1 });
 
     res

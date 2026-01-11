@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -5,7 +7,6 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import session from "express-session"; // 1. Import session
 import MongoStore from "connect-mongo"; // 2. Import Mongo storage
-import dotenv from "dotenv";
 
 // Routes
 import userRoute from "./routes/userRoute.js";
@@ -15,7 +16,6 @@ import walletTransactionsRoute from './routes/walletRoute.js'
 import chatRoutes from "./routes/chat.routes.js";
 import { protect } from "./middlewares/userMiddleware.js";
 
-dotenv.config();
 const app = express();
 
 // --- SESSION CONFIGURATION (Must be before routes) ---

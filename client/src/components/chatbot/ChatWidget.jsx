@@ -161,11 +161,6 @@ const ChatWidget = ({ user }) => {
             className="w-full h-full object-cover scale-110" 
           />
         )}
-        
-        {/* Unread notification dot */}
-        {!isOpen && (
-          <span className="absolute top-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
-        )}
       </button>
     </div>
   );

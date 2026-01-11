@@ -83,7 +83,6 @@ export const geminiReply = async (msg, userName, sessionHistory = []) => {
   try {
     // Get past conversation or create new
     const history = sessionHistory || [];
-    console.log(history);
     // Build messages with memory
     const messages = [
       { role: "system", content: getPrompt(userName) },
