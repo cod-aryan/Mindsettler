@@ -1,106 +1,66 @@
-import React, {
-  useState,
-  useEffect,
-  useRef
-} from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, User, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, Lock, User, Sparkles, Eye, EyeOff } from "lucide-react";
 import API from "../api/axios";
 import logo from "../assets/icons/MindsettlerLogo-removebg-preview.png";
 import { Link } from "react-router";
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
+import Login_img from "../assets/images/Login_img-removebg-preview.png";
 
+// Illustration Section - Character overlaps to the left like in the reference
+const IllustrationSection = ({ illustrationSrc }) => (
+  <div className="hidden lg:block lg:w-1/2 relative overflow-visible">
+    {/* Pinkish Arch Background - Positioned to the right */}
+    <div className="absolute bottom-0 right-50 w-[320px] h-[500px] xl:w-[380px] xl:h-[580px] bg-gradient-to-t from-[#F8D7DA] via-[#FADBD8] to-[#FDF2F0] rounded-t-full" />
+    
+    {/* Character Image - Overlaps to the left */}
+    <motion.div 
+      initial={{ scale: 0.9, opacity: 0, x: 50 }}
+      animate={{ scale: 1, opacity: 1, x: 0 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="absolute bottom-20 right-20 left-[-80px] xl:left-[-120px] z-10 flex items-end justify-center"
+    >
+      {illustrationSrc && (
+        <img 
+          src={illustrationSrc} 
+          alt="Login Illustration" 
+          className="w-[350px] xl:w-[390px] h-auto object-contain"
+        />
+      )}
+    </motion.div>
+  </div>
+);
 
-// Using RequestAnimationFrame properly and lowering CPU overhead
-const MindDustBackground = React.memo(() => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d", { alpha: false }); // Optimization: set alpha false if bg is solid
-    let particles = [];
-    let animationFrameId;
-    let mouse = { x: -1000, y: -1000, radius: 150 };
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-
-    class Particle {
-      constructor() {
-        this.init();
-      }
-      init() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 1.5 + 0.2;
-        this.baseX = this.x;
-        this.baseY = this.y;
-        this.density = Math.random() * 20 + 1;
-        this.color = Math.random() > 0.6 ? "#3F2965" : "#DD1764";
-      }
-      draw() {
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      update() {
-        let dx = mouse.x - this.x;
-        let dy = mouse.y - this.y;
-        let distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < mouse.radius) {
-          let force = (mouse.radius - distance) / mouse.radius;
-          this.x -= (dx / distance) * force * this.density;
-          this.y -= (dy / distance) * force * this.density;
-        } else {
-          this.x += (this.baseX - this.x) * 0.05;
-          this.y += (this.baseY - this.y) * 0.05;
-        }
-      }
-    }
-
-    const init = () => {
-      particles = Array.from({ length: 1500 }, () => new Particle()); // 1500 is the sweet spot for density vs performance
-    };
-
-    const animate = () => {
-      ctx.fillStyle = "#fcfaff"; // Match your background color
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.globalAlpha = 0.3;
-      particles.forEach((p) => {
-        p.update();
-        p.draw();
-      });
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    window.addEventListener("mousemove", (e) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    });
-    window.addEventListener("resize", resize);
-    resize();
-    init();
-    animate();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-
-  return (
-    <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />
-  );
-});
+// Mobile Illustration - Smaller version for mobile devices
+const MobileIllustration = ({ illustrationSrc }) => (
+  <div className="lg:hidden relative w-full flex justify-center items-end mt-8 mb-4">
+    {/* Pinkish Arch Background for Mobile */}
+    <div className="absolute bottom-0 w-[200px] h-[250px] bg-gradient-to-t from-[#F8D7DA] via-[#FADBD8] to-[#FDF2F0] rounded-t-full" />
+    
+    {/* Character Image for Mobile */}
+    <motion.div 
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="relative z-10"
+    >
+      {illustrationSrc && (
+        <img 
+          src={illustrationSrc} 
+          alt="Login Illustration" 
+          className="w-[180px] h-auto object-contain"
+        />
+      )}
+    </motion.div>
+  </div>
+);
 
 const AuthPage = () => {
   const [view, setView] = useState("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { setUser } = useAuth();
 
@@ -111,7 +71,7 @@ const AuthPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return; // Prevent double submission
+    if (isSubmitting) return;
     setErrors([]);
     setIsSubmitting(true);
 
@@ -130,7 +90,6 @@ const AuthPage = () => {
         if (endpoint === "forgot-password") {
           setView("forgot-success");
         } else {
-          // Delay the redirect to let the user feel the "Success"
           setView("success");
           setTimeout(() => {
             setUser(resData.user);
@@ -140,8 +99,8 @@ const AuthPage = () => {
       }
     } catch (err) {
       const errorMsg = err.response?.data?.errors || [
-          err.response?.data?.message,
-        ] || ["Service unavailable"];
+        err.response?.data?.message,
+      ] || ["Service unavailable"];
       setErrors(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -149,181 +108,310 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-[#fcfaff] overflow-hidden p-6">
-      <MindDustBackground />
-
-      {/* Background Orbs */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-125 h-125 bg-[#3F2965]/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-125 h-125 bg-[#DD1764]/5 rounded-full blur-[120px]" />
-      </div>
-
+    <div className="relative min-h-screen w-full flex bg-white overflow-hidden">
       <AnimatePresence mode="wait">
-{view === "forgot-success" ? (
-  <motion.div
-    key="forgot-success"
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    exit={{ opacity: 0 }}
-    className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-2xl p-12 rounded-[2.5rem] shadow-2xl border border-white/50 text-center"
-  >
-    <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-      <Mail size={40} className="text-blue-500" />
-    </div>
-    
-    <h2 className="text-3xl font-bold text-[#3F2965] mb-2">Check your email</h2>
-    <p className="text-gray-500 mb-8">
-      We've sent a password reset link to your inbox. Please check your spam folder if you don't see it. 📥
-    </p>
+        {view === "forgot-success" ? (
+          <motion.div
+            key="forgot-success"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="relative z-10 w-full flex items-center justify-center p-4 sm:p-6"
+          >
+            <div className="w-full max-w-md bg-white p-8 sm:p-12 rounded-3xl shadow-xl text-center">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", duration: 0.6 }}
+                className="w-16 h-16 sm:w-20 sm:h-20 bg-[#3F2965]/10 rounded-full flex items-center justify-center mx-auto mb-6"
+              >
+                <Mail size={32} className="text-[#3F2965] sm:w-10 sm:h-10" />
+              </motion.div>
 
-    <button
-      onClick={() => setView('login')}
-      className="text-sm font-bold text-[#DD1764] hover:underline"
-    >
-      BACK TO LOGIN
-    </button>
-  </motion.div>
-) : (view === "success" ? (
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#3F2965] mb-2">
+                Check your email
+              </h2>
+              <p className="text-gray-500 mb-8 text-sm sm:text-base">
+                We've sent a password reset link to your inbox. Please check
+                your spam folder if you don't see it. 📥
+              </p>
+
+              <button
+                onClick={() => setView("login")}
+                className="text-sm font-bold text-[#DD1764] hover:underline"
+              >
+                BACK TO LOGIN
+              </button>
+            </div>
+          </motion.div>
+        ) : view === "success" ? (
           <motion.div
             key="success"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-2xl p-12 rounded-[2.5rem] shadow-2xl border border-white/50 text-center"
+            className="relative z-10 w-full flex items-center justify-center p-4 sm:p-6"
           >
-            {/* 🚀 Step 1: Add your Success Icon and Message here */}
-            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Sparkles size={40} className="text-green-500" />
+            <div className="w-full max-w-md bg-white p-8 sm:p-12 rounded-3xl shadow-xl text-center">
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", duration: 0.8 }}
+                className="w-16 h-16 sm:w-20 sm:h-20 bg-[#DD1764]/10 rounded-full flex items-center justify-center mx-auto mb-6"
+              >
+                <Sparkles size={32} className="text-[#DD1764] sm:w-10 sm:h-10" />
+              </motion.div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#3F2965] mb-2">
+                Success!
+              </h2>
+              <p className="text-gray-500 text-sm sm:text-base">
+                Redirecting you to your dashboard...
+              </p>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 2 }}
+                className="h-1 bg-gradient-to-r from-[#3F2965] to-[#DD1764] rounded-full mt-6"
+              />
             </div>
-            <h2 className="text-3xl font-bold text-[#3F2965] mb-2 text-center">
-              Success!
-            </h2>
-            <p className="text-gray-500 text-center">
-              Redirecting you to your dashboard...
-            </p>
           </motion.div>
         ) : (
           <motion.div
             key={view}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-2xl p-8 md:p-12 rounded-[2.5rem] shadow-2xl border border-white/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="relative z-10 w-full flex flex-col lg:flex-row"
           >
-            <Link to="/" className="block w-fit mx-auto mb-8">
-              <img
-                src={logo}
-                alt="Logo"
-                className="h-10 w-auto hover:scale-105 transition-transform"
-              />
-            </Link>
+            {/* Left Section - Form */}
+            <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-4 py-8 sm:px-8 md:px-12 lg:px-16 lg:py-12">
+              <div className="w-full max-w-md">
+                {/* Logo */}
+                <Link to="/" className="block w-fit mb-6 sm:mb-8">
+                  <motion.img
+                    whileHover={{ scale: 1.05 }}
+                    src={logo}
+                    alt="Logo"
+                    className="h-8 sm:h-10 w-auto"
+                  />
+                </Link>
 
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-[#3F2965] tracking-tight">
-                {view === "login"
-                  ? "Welcome Back"
-                  : view === "signup"
-                  ? "Begin Journey"
-                  : "Recover Access"}
-              </h2>
-              <p className="text-gray-500 text-sm mt-2">
-                Secure your mental well-being journey.
-              </p>
-            </div>
+                {/* Mobile Illustration - Shows on small screens */}
+                <MobileIllustration illustrationSrc={Login_img} />
 
-            {/* Error List Component */}
-            <AnimatePresence>
-              {errors.length > 0 && (
+                {/* Header */}
                 <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  className="mb-6 overflow-hidden"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="mb-6 sm:mb-8"
                 >
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-2xl text-[13px] text-red-600 font-medium">
-                    {errors.map((err, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span>•</span>
-                        {err}
-                      </div>
-                    ))}
-                  </div>
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#3F2965] mb-2 italic">
+                    {view === "login"
+                      ? "Welcome Back!!"
+                      : view === "signup"
+                      ? "Begin Your Journey"
+                      : "Recover Access"}
+                  </h1>
+                  <p className="text-[#6B4D8A]/70 text-sm">
+                    {view === "login"
+                      ? "Sign in to continue your mental wellness journey."
+                      : view === "signup"
+                      ? "Create an account to start your journey."
+                      : "Enter your email to reset your password."}
+                  </p>
                 </motion.div>
-              )}
-            </AnimatePresence>
 
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              {view === "signup" && (
-                <Input
-                  icon={<User size={18} />}
-                  placeholder="Full Name"
-                  name="name"
-                  required
-                />
-              )}
-              <Input
-                icon={<Mail size={18} />}
-                type="email"
-                placeholder="Email Address"
-                name="email"
-                required
-              />
-              {view !== "forgot" && (
-                <Input
-                  icon={<Lock size={18} />}
-                  type="password"
-                  placeholder="Password"
-                  name="password"
-                  required
-                />
-              )}
+                {/* Error Messages */}
+                <AnimatePresence>
+                  {errors.length > 0 && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="mb-4 sm:mb-6 overflow-hidden"
+                    >
+                      <div className="p-3 sm:p-4 bg-[#DD1764]/10 border border-[#DD1764]/20 rounded-2xl text-sm text-[#DD1764] font-medium">
+                        {errors.map((err, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span>•</span>
+                            {err}
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-              <button
-                disabled={isSubmitting}
-                className="w-full bg-[#3F2965] hover:bg-[#2d1d49] text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-[#3F2965]/20 disabled:opacity-70 mt-4"
-              >
-                {isSubmitting ? (
-                  <Sparkles className="animate-spin" />
-                ) : (
-                  "CONTINUE"
-                )}
-                {!isSubmitting && <ArrowRight size={18} />}
-              </button>
-            </form>
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" noValidate>
+                  {view === "signup" && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <Input
+                        icon={<User size={18} className="sm:w-5 sm:h-5" />}
+                        placeholder="Full Name"
+                        name="name"
+                        label="Full Name"
+                        required
+                      />
+                    </motion.div>
+                  )}
 
-            <div className="mt-8 text-center space-y-3">
-              <button
-                onClick={() => setView(view === "login" ? "signup" : "login")}
-                className="text-sm font-bold text-[#DD1764] hover:underline"
-              >
-                {view === "login"
-                  ? "NEW HERE? CREATE ACCOUNT"
-                  : "HAVE AN ACCOUNT? LOG IN"}
-              </button>
-              {view === "login" && (
-                <button
-                  onClick={() => setView("forgot")}
-                  className="block mx-auto text-xs text-gray-400 hover:text-[#3F2965] transition-colors"
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <Input
+                      icon={<Mail size={18} className="sm:w-5 sm:h-5" />}
+                      type="email"
+                      placeholder="email@gmail.com"
+                      name="email"
+                      label="Email"
+                      required
+                    />
+                  </motion.div>
+
+                  {view !== "forgot" && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <Input
+                        icon={<Lock size={18} className="sm:w-5 sm:h-5" />}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        name="password"
+                        label="Password"
+                        required
+                        rightIcon={
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="text-[#6B4D8A]/40 hover:text-[#3F2965] transition-colors"
+                          >
+                            {showPassword ? (
+                              <EyeOff size={18} className="sm:w-5 sm:h-5" />
+                            ) : (
+                              <Eye size={18} className="sm:w-5 sm:h-5" />
+                            )}
+                          </button>
+                        }
+                      />
+                    </motion.div>
+                  )}
+
+                  {/* Forgot Password Link */}
+                  {view === "login" && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="flex justify-end"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setView("forgot")}
+                        className="text-sm text-[#3F2965] hover:text-[#DD1764] font-medium transition-colors"
+                      >
+                        Forgot Password?
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {/* Submit Button */}
+                  <motion.button
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isSubmitting}
+                    className="w-full py-3.5 sm:py-4 px-6 bg-gradient-to-r from-[#3F2965] to-[#6B4D8A] hover:from-[#2d1d49] hover:to-[#5A3D7A] text-white font-semibold rounded-full transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-[#3F2965]/30 disabled:opacity-70 disabled:cursor-not-allowed text-sm sm:text-base"
+                  >
+                    {isSubmitting ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                      >
+                        <Sparkles size={20} />
+                      </motion.div>
+                    ) : (
+                      <>
+                        {view === "login"
+                          ? "Login"
+                          : view === "signup"
+                          ? "Sign Up"
+                          : "Send Reset Link"}
+                      </>
+                    )}
+                  </motion.button>
+                </form>
+
+                {/* Toggle View Link */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7 }}
+                  className="mt-6 sm:mt-8 text-center"
                 >
-                  Forgot your password?
-                </button>
-              )}
+                  <p className="text-[#6B4D8A]/70 text-sm">
+                    {view === "login"
+                      ? "Don't have an account? "
+                      : view === "signup"
+                      ? "Already have an account? "
+                      : "Remember your password? "}
+                    <button
+                      onClick={() =>
+                        setView(view === "login" ? "signup" : "login")
+                      }
+                      className="text-[#DD1764] font-bold hover:underline"
+                    >
+                      {view === "login" ? "Sign up" : "Log in"}
+                    </button>
+                  </p>
+                </motion.div>
+              </div>
             </div>
+
+            {/* Right Section - Illustration (Desktop Only) */}
+            <IllustrationSection illustrationSrc={Login_img} />
           </motion.div>
-        ))}
+        )}
       </AnimatePresence>
     </div>
   );
 };
 
-const Input = ({ icon, ...props }) => (
-  <div className="relative group">
-    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#3F2965] transition-colors">
-      {icon}
+// Enhanced Input Component with responsive styling
+const Input = ({ icon, label, rightIcon, ...props }) => (
+  <div className="space-y-1.5 sm:space-y-2">
+    {label && (
+      <label className="block text-[#3F2965] text-sm font-medium">{label}</label>
+    )}
+    <div className="relative group">
+      <div className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 text-[#6B4D8A]/40 group-focus-within:text-[#3F2965] transition-colors">
+        {icon}
+      </div>
+      <input
+        {...props}
+        className="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-3 sm:py-4 bg-white border border-[#3F2965]/20 rounded-full focus:border-[#3F2965] focus:ring-2 focus:ring-[#3F2965]/20 outline-none transition-all text-[#3F2965] placeholder-[#6B4D8A]/40 text-sm sm:text-base"
+      />
+      {rightIcon && (
+        <div className="absolute right-3.5 sm:right-4 top-1/2 -translate-y-1/2">
+          {rightIcon}
+        </div>
+      )}
     </div>
-    <input
-      {...props}
-      className="w-full pl-12 pr-4 py-4 bg-gray-50/50 rounded-2xl border border-transparent focus:border-[#3F2965]/20 focus:bg-white outline-none transition-all text-[#3F2965] font-medium"
-    />
   </div>
 );
 
