@@ -1,10 +1,10 @@
-import Navbar from "../components/common/Navbar";
-import JourneySection from "../components/journey/JourneySection";
-import HeroSection from "../components/hero/HeroSection";
-import FAQ from "../components/common/FAQ";
-import Footer from "../components/common/Footer";
-import MindSettlerSection from "../components/common/MindSettlerSection";
-import StatsSection from "../components/common/StatsSection";
+import Navbar from "../components/common/Navbar.jsx";
+import JourneySection from "../components/journey/JourneySection.jsx";
+import HeroSection from "../components/hero/HeroSection.jsx";
+import FAQ from "../components/common/FAQ.jsx";
+import Footer from "../components/common/Footer.jsx";
+import MindSettlerSection from "../components/common/MindSettlerSection.jsx";
+import StatsSection from "../components/common/StatsSection.jsx";
 
 
 
