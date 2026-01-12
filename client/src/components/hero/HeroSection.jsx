@@ -15,8 +15,8 @@ const HeroSection = () => {
   const springY = useSpring(mouseY, { stiffness: 100, damping: 30 });
 
   // Map mouse movement to pixels (e.g., move image 20px in opposite direction)
-  const moveX = useTransform(springX, [0, window.innerWidth], [10, -10]);
-  const moveY = useTransform(springY, [0, window.innerHeight], [10, -10]);
+  const moveX = useTransform(springX, [0, window.innerWidth], [15, -15]);
+  const moveY = useTransform(springY, [0, window.innerHeight], [15, -15]);
 
   const handleMouseMove = (e) => {
     mouseX.set(e.clientX);
