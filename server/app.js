@@ -15,9 +15,11 @@ import adminRoute from "./routes/adminRoute.js";
 import walletTransactionsRoute from './routes/walletRoute.js'
 import chatRoutes from "./routes/chat.routes.js";
 import { protect } from "./middlewares/userMiddleware.js";
+import connectDB from "./config/db.js";
 
+// Connect to Database
+await connectDB();
 const app = express();
-
 // --- SESSION CONFIGURATION (Must be before routes) ---
 // This enables req.session for your chatbot
 app.use(session({
