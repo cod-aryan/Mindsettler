@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Home from "./pages/home.jsx";
+import Home from "./pages/Home.jsx";
 import ContactPage from "./pages/Contact.jsx";
 import AuthPage from "./pages/Authentication.jsx";
 import PageNotFound from "./pages/404";
@@ -9,7 +9,7 @@ import Logout from "./components/auth/Logout.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
 import BookingPage from "./pages/BookingPage.jsx";
 import CorporateServices from "./pages/CorporateServices.jsx";
-import UserProfile from "./pages/userProfile.jsx";
+import UserProfile from "./pages/UserProfile.jsx";
 import ChatWidget from "./components/chatbot/ChatWidget.jsx";
 import BlogPage from "./pages/BlogPage.jsx";
 import BlogDetail from "./pages/BlogDetail.jsx";
