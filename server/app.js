@@ -20,6 +20,7 @@ import connectDB from "./config/db.js";
 // Connect to Database
 await connectDB();
 const app = express();
+app.set("trust proxy", 1); // Trust first proxy (needed for secure cookies behind proxies)
 // --- SESSION CONFIGURATION (Must be before routes) ---
 // This enables req.session for your chatbot
 app.use(session({

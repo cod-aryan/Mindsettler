@@ -12,20 +12,20 @@ import Login_img from "../assets/images/Login_img-removebg-preview.png";
 const IllustrationSection = ({ illustrationSrc }) => (
   <div className="hidden lg:block lg:w-1/2 relative overflow-visible">
     {/* Pinkish Arch Background - Positioned to the right */}
-    <div className="absolute bottom-0 right-50 w-[320px] h-[500px] xl:w-[380px] xl:h-[580px] bg-gradient-to-t from-[#F8D7DA] via-[#FADBD8] to-[#FDF2F0] rounded-t-full" />
+    <div className="absolute bottom-0 right-50 w-[320px] h-125 xl:w-95 xl:h-145 bg-linear-to-t from-[#F8D7DA] via-[#FADBD8] to-[#FDF2F0] rounded-t-full" />
     
     {/* Character Image - Overlaps to the left */}
     <motion.div 
       initial={{ scale: 0.9, opacity: 0, x: 50 }}
       animate={{ scale: 1, opacity: 1, x: 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="absolute bottom-20 right-20 left-[-80px] xl:left-[-120px] z-10 flex items-end justify-center"
+      className="absolute bottom-20 right-20 -left-20 xl:-left-30 z-10 flex items-end justify-center"
     >
       {illustrationSrc && (
         <img 
           src={illustrationSrc} 
           alt="Login Illustration" 
-          className="w-[350px] xl:w-[390px] h-auto object-contain"
+          className="w-87.5 xl:w-97.5 h-auto object-contain"
         />
       )}
     </motion.div>
@@ -36,7 +36,7 @@ const IllustrationSection = ({ illustrationSrc }) => (
 const MobileIllustration = ({ illustrationSrc }) => (
   <div className="lg:hidden relative w-full flex justify-center items-end mt-8 mb-4">
     {/* Pinkish Arch Background for Mobile */}
-    <div className="absolute bottom-0 w-[200px] h-[250px] bg-gradient-to-t from-[#F8D7DA] via-[#FADBD8] to-[#FDF2F0] rounded-t-full" />
+    <div className="absolute bottom-0 w-50 h-62.5 bg-linear-to-t from-[#F8D7DA] via-[#FADBD8] to-[#FDF2F0] rounded-t-full" />
     
     {/* Character Image for Mobile */}
     <motion.div 
@@ -49,7 +49,7 @@ const MobileIllustration = ({ illustrationSrc }) => (
         <img 
           src={illustrationSrc} 
           alt="Login Illustration" 
-          className="w-[180px] h-auto object-contain"
+          className="w-45 h-auto object-contain"
         />
       )}
     </motion.div>
@@ -171,7 +171,7 @@ const AuthPage = () => {
                 initial={{ width: 0 }}
                 animate={{ width: "100%" }}
                 transition={{ duration: 2 }}
-                className="h-1 bg-gradient-to-r from-[#3F2965] to-[#DD1764] rounded-full mt-6"
+                className="h-1 bg-linear-to-r from-[#3F2965] to-[#DD1764] rounded-full mt-6"
               />
             </div>
           </motion.div>
@@ -332,7 +332,7 @@ const AuthPage = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={isSubmitting}
-                    className="w-full py-3.5 sm:py-4 px-6 bg-gradient-to-r from-[#3F2965] to-[#6B4D8A] hover:from-[#2d1d49] hover:to-[#5A3D7A] text-white font-semibold rounded-full transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-[#3F2965]/30 disabled:opacity-70 disabled:cursor-not-allowed text-sm sm:text-base"
+                    className="w-full py-3.5 sm:py-4 px-6 bg-linear-to-r from-[#3F2965] to-[#6B4D8A] hover:from-[#2d1d49] hover:to-[#5A3D7A] text-white font-semibold rounded-full transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-[#3F2965]/30 disabled:opacity-70 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {isSubmitting ? (
                       <motion.div
