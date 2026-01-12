@@ -215,7 +215,7 @@ const Navbar = () => {
                     block px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200
                     ${
                       isActive
-                        ? "bg-gradient-to-r from-[#583f7a] to-[#e04073] text-white shadow-md"
+                        ? "bg-linear-to-r from-[#583f7a] to-[#e04073] text-white shadow-md"
                         : "text-[#583f7a] hover:bg-[#583f7a]/10"
                     }
                   `}

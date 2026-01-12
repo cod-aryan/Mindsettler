@@ -44,7 +44,7 @@ const FloatingParticles = () => (
 const TypingIndicator = () => (
   <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
     <div className="relative mr-2 mt-1">
-      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-[#3F2965] via-[#5a3d8a] to-[#Dd1764] p-0.5 shadow-lg shadow-purple-500/20">
+      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-linear-to-br from-[#3F2965] via-[#5a3d8a] to-[#Dd1764] p-0.5 shadow-lg shadow-purple-500/20">
         <div className="w-full h-full rounded-2xl bg-white flex items-center justify-center overflow-hidden">
           <img src={botAvatar} alt="" className="w-6 h-6 object-contain" />
         </div>
@@ -57,7 +57,7 @@ const TypingIndicator = () => (
           {[0, 1, 2].map((i) => (
             <span
               key={i}
-              className="w-2.5 h-2.5 bg-gradient-to-r from-[#3F2965] to-[#Dd1764] rounded-full animate-bounce"
+              className="w-2.5 h-2.5 bg-linear-to-r from-[#3F2965] to-[#Dd1764] rounded-full animate-bounce"
               style={{ animationDelay: `${i * 150}ms` }}
             />
           ))}
@@ -82,7 +82,7 @@ const MessageBubble = ({ message, isUser, isLatest }) => {
     >
       {!isUser && (
         <div className="relative mr-2 mt-1 shrink-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-[#3F2965] via-[#5a3d8a] to-[#Dd1764] p-0.5 shadow-lg shadow-purple-500/20 transition-transform group-hover:scale-105">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-linear-to-br from-[#3F2965] via-[#5a3d8a] to-[#Dd1764] p-0.5 shadow-lg shadow-purple-500/20 transition-transform group-hover:scale-105">
             <div className="w-full h-full rounded-2xl bg-white flex items-center justify-center overflow-hidden">
               <img src={botAvatar} alt="" className="w-6 h-6 object-contain" />
             </div>
@@ -100,23 +100,23 @@ const MessageBubble = ({ message, isUser, isLatest }) => {
             transition-all duration-300 group-hover:shadow-xl
             ${
               isUser
-                ? `bg-gradient-to-br from-[#Dd1764] via-[#e83d7f] to-[#ff6b9d] text-white 
-                   rounded-[1.5rem] rounded-tr-lg shadow-lg shadow-pink-500/25
+                ? `bg-linear-to-br from-[#Dd1764] via-[#e83d7f] to-[#ff6b9d] text-white 
+                   rounded-3xl rounded-tr-lg shadow-lg shadow-pink-500/25
                    hover:shadow-pink-500/40`
                 : `bg-white/80 backdrop-blur-sm text-slate-700 
-                   rounded-[1.5rem] rounded-tl-lg border border-white/50 
+                   rounded-3xl rounded-tl-lg border border-white/50 
                    shadow-lg shadow-slate-200/50 hover:bg-white`
             }
           `}
         >
           {!isUser && (
-            <div className="absolute inset-0 rounded-[1.5rem] rounded-tl-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 pointer-events-none" />
+            <div className="absolute inset-0 rounded-3xl rounded-tl-lg bg-linear-to-br from-purple-50/50 to-pink-50/50 pointer-events-none" />
           )}
           <span className="relative z-10">{message.content}</span>
           <div
             className={`absolute top-3 w-3 h-3 transform rotate-45 ${
               isUser
-                ? "-right-1 bg-gradient-to-br from-[#Dd1764] to-[#e83d7f]"
+                ? "-right-1 bg-linear-to-br from-[#Dd1764] to-[#e83d7f]"
                 : "-left-1 bg-white/80 border-l border-t border-white/50"
             }`}
           />
@@ -160,7 +160,7 @@ const MessageBubble = ({ message, isUser, isLatest }) => {
 
       {isUser && (
         <div className="relative ml-2 mt-1 shrink-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-linear-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-bold text-sm shadow-lg">
             {message.userName?.charAt(0) || "U"}
           </div>
         </div>
@@ -486,7 +486,7 @@ const ChatWidget = ({ user }) => {
         <>
           {/* Mobile overlay - tapping closes chat */}
           <div
-            className="md:hidden fixed inset-0 bg-gradient-to-b from-[#3F2965]/30 to-[#Dd1764]/20 backdrop-blur-md z-40 animate-in fade-in duration-300"
+            className="md:hidden fixed inset-0 bg-linear-to-b from-[#3F2965]/30 to-[#Dd1764]/20 backdrop-blur-md z-40 animate-in fade-in duration-300"
             onClick={handleClose}
           />
 
@@ -497,10 +497,10 @@ const ChatWidget = ({ user }) => {
               animate-in duration-500 ease-out
               inset-0 rounded-none
               md:inset-auto md:bottom-24 md:right-6
-              md:w-[380px] lg:w-[420px]
-              md:h-[580px] lg:h-[620px]
-              md:rounded-[2rem]
-              bg-gradient-to-b from-white/95 to-white/90 backdrop-blur-xl
+              md:w-95 lg:w-105
+              md:h-145 lg:h-155
+              md:rounded-4xl
+              bg-linear-to-b from-white/95 to-white/90 backdrop-blur-xl
               md:shadow-2xl md:shadow-purple-500/10
               md:border md:border-white/50
               slide-in-from-bottom-10 md:slide-in-from-bottom-5
@@ -508,8 +508,8 @@ const ChatWidget = ({ user }) => {
           >
             {/* === HEADER === */}
             <div className="shrink-0 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#3F2965] via-[#5a3d8a] to-[#Dd1764]" />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/10" />
+              <div className="absolute inset-0 bg-linear-to-r from-[#3F2965] via-[#5a3d8a] to-[#Dd1764]" />
+              <div className="absolute inset-0 bg-linear-to-b from-transparent to-black/10" />
               <FloatingParticles />
 
               <div className="relative px-4 py-4 sm:px-5 sm:py-5 flex justify-between items-center safe-area-top">
@@ -552,7 +552,7 @@ const ChatWidget = ({ user }) => {
                     transition-all duration-200 
                     text-white 
                     touch-manipulation
-                    min-h-[44px] min-w-[44px]
+                    min-h-11 min-w-11
                     justify-center
                   "
                   aria-label="Close chat"
@@ -599,7 +599,7 @@ const ChatWidget = ({ user }) => {
                     <button
                       key={i}
                       onClick={() => handleQuickReply(reply.text)}
-                      className="group flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gradient-to-r hover:from-[#3F2965] hover:to-[#Dd1764] border border-slate-200 hover:border-transparent rounded-full text-xs font-bold text-slate-600 hover:text-white shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105"
+                      className="group flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-linear-to-r hover:from-[#3F2965] hover:to-[#Dd1764] border border-slate-200 hover:border-transparent rounded-full text-xs font-bold text-slate-600 hover:text-white shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105"
                     >
                       <span>{reply.emoji}</span>
                       <span>{reply.text}</span>
@@ -609,8 +609,8 @@ const ChatWidget = ({ user }) => {
               )}
 
               <div className="flex justify-center pt-4 pb-2">
-                <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 rounded-full border border-slate-200/50">
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/20">
+                <div className="flex items-center gap-1.5 px-4 py-2 bg-linear-to-r from-slate-50 to-slate-100 rounded-full border border-slate-200/50">
+                  <div className="w-5 h-5 rounded-full bg-linear-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/20">
                     <ShieldCheck size={10} className="text-white" />
                   </div>
                   <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -646,11 +646,11 @@ const ChatWidget = ({ user }) => {
                     relative p-3.5 sm:p-4 rounded-2xl font-bold
                     transition-all duration-300 transform
                     disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed
-                    min-h-[48px] min-w-[48px]
+                    min-h-12 min-w-12
                     flex items-center justify-center
                     ${
                       message.trim()
-                        ? "bg-gradient-to-r from-[#3F2965] to-[#Dd1764] text-white shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 active:scale-95"
+                        ? "bg-linear-to-r from-[#3F2965] to-[#Dd1764] text-white shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 active:scale-95"
                         : "bg-slate-100 text-slate-300"
                     }
                   `}
@@ -676,7 +676,7 @@ const ChatWidget = ({ user }) => {
               onClick={handleClose}
               className="
                 md:hidden
-                fixed bottom-6 left-1/2 -translate-x-1/2 z-[60]
+                fixed top-25 left-1/2 -translate-x-1/2 z-60
                 flex items-center gap-2
                 px-6 py-3
                 bg-slate-900/90 hover:bg-slate-800
@@ -704,7 +704,7 @@ const ChatWidget = ({ user }) => {
       <div
         ref={buttonRef}
         style={buttonPositionStyles}
-        className={`z-[60] touch-none ${
+        className={`z-60 touch-none ${
           isOpen ? "scale-0 md:scale-100 pointer-events-none md:pointer-events-auto" : "scale-100"
         } transition-transform duration-300`}
       >
@@ -721,9 +721,9 @@ const ChatWidget = ({ user }) => {
         {/* Pulsing rings */}
         {!isOpen && !isDragging && (
           <>
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#3F2965] to-[#Dd1764] animate-ping opacity-20" />
+            <div className="absolute inset-0 rounded-full bg-linear-to-r from-[#3F2965] to-[#Dd1764] animate-ping opacity-20" />
             <div
-              className="absolute inset-0 rounded-full bg-gradient-to-r from-[#3F2965] to-[#Dd1764] animate-ping opacity-10"
+              className="absolute inset-0 rounded-full bg-linear-to-r from-[#3F2965] to-[#Dd1764] animate-ping opacity-10"
               style={{ animationDelay: "0.5s" }}
             />
           </>
@@ -743,7 +743,7 @@ const ChatWidget = ({ user }) => {
             ${
               isOpen
                 ? "bg-slate-800 rotate-180"
-                : "bg-gradient-to-br from-[#3F2965] via-[#5a3d8a] to-[#Dd1764] hover:shadow-purple-500/50"
+                : "bg-linear-to-br from-[#3F2965] via-[#5a3d8a] to-[#Dd1764] hover:shadow-purple-500/50"
             }
             ${!isDragging && !isOpen ? "hover:scale-110 active:scale-95" : ""}
           `}
@@ -796,11 +796,11 @@ const ChatWidget = ({ user }) => {
       {!isOpen && showNotification && !isDragging && (
         <div
           style={getNotificationPosition()}
-          className="z-[59] animate-in fade-in slide-in-from-right-5 duration-700 delay-1000"
+          className="z-59 animate-in fade-in slide-in-from-right-5 duration-700 delay-1000"
         >
-          <div className="relative max-w-[220px] sm:max-w-[240px]">
+          <div className="relative max-w-55 sm:max-w-60">
             <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-100 relative overflow-hidden group hover:shadow-2xl transition-shadow">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3F2965] to-[#Dd1764]" />
+              <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-[#3F2965] to-[#Dd1764]" />
 
               <button
                 onClick={() => setShowNotification(false)}
@@ -810,7 +810,7 @@ const ChatWidget = ({ user }) => {
               </button>
 
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3F2965] to-[#Dd1764] flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20">
+                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-[#3F2965] to-[#Dd1764] flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20">
                   <Sparkles size={18} className="text-white" />
                 </div>
                 <div>

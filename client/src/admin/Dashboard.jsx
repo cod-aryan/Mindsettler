@@ -97,7 +97,7 @@ const AdminProfileView = ({ user, setUser }) => {
         {/* Avatar Card */}
         <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-[2.5rem] border shadow-sm flex flex-col items-center text-center h-fit">
           <div className="relative group cursor-pointer">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 rounded-full bg-gradient-to-tr from-[#3F2965] to-[#Dd1764] flex items-center justify-center text-white text-3xl sm:text-4xl lg:text-5xl font-black shadow-2xl ring-4 ring-white">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 rounded-full bg-linear-to-tr from-[#3F2965] to-[#Dd1764] flex items-center justify-center text-white text-3xl sm:text-4xl lg:text-5xl font-black shadow-2xl ring-4 ring-white">
               {formData.name?.charAt(0)}
             </div>
             <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -264,7 +264,7 @@ const WalletRequestsView = () => {
                 <td className="p-4 lg:p-5 font-bold text-slate-800">
                   <div className="flex flex-col">
                     <span className="text-sm">{req.user?.name}</span>
-                    <span className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]">
+                    <span className="text-[10px] text-slate-400 font-medium truncate max-w-37.5">
                       {req.user?.email}
                     </span>
                   </div>
@@ -331,14 +331,14 @@ const WalletRequestsView = () => {
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#3F2965] to-[#Dd1764] flex items-center justify-center text-white font-bold text-sm">
+                  <div className="w-10 h-10 rounded-full bg-linear-to-tr from-[#3F2965] to-[#Dd1764] flex items-center justify-center text-white font-bold text-sm">
                     {req.user?.name?.charAt(0)}
                   </div>
                   <div>
                     <p className="font-bold text-slate-800 text-sm">
                       {req.user?.name}
                     </p>
-                    <p className="text-[10px] text-slate-400 truncate max-w-[150px]">
+                    <p className="text-[10px] text-slate-400 truncate max-w-37.5">
                       {req.user?.email}
                     </p>
                   </div>
@@ -578,14 +578,14 @@ const AppointmentsView = () => {
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#3F2965] to-[#Dd1764] flex items-center justify-center text-white font-bold text-sm">
+                  <div className="w-10 h-10 rounded-full bg-linear-to-tr from-[#3F2965] to-[#Dd1764] flex items-center justify-center text-white font-bold text-sm">
                     {app.user?.name?.charAt(0)}
                   </div>
                   <div>
                     <p className="font-bold text-slate-800 text-sm">
                       {app.user?.name}
                     </p>
-                    <p className="text-[10px] text-slate-400 truncate max-w-[150px]">
+                    <p className="text-[10px] text-slate-400 truncate max-w-37.5">
                       {app.user?.email}
                     </p>
                   </div>
@@ -659,7 +659,7 @@ const AppointmentsView = () => {
                 <h3 className="font-black text-[#3F2965] uppercase text-[10px] sm:text-xs tracking-widest">
                   Appointment Summary
                 </h3>
-                <p className="text-[9px] sm:text-xs font-bold text-slate-400 mt-0.5 truncate max-w-[200px]">
+                <p className="text-[9px] sm:text-xs font-bold text-slate-400 mt-0.5 truncate max-w-50">
                   ID: {selectedApp._id.toUpperCase()}
                 </p>
               </div>
@@ -1013,7 +1013,7 @@ const TimeSlotsView = () => {
         <p className="text-[9px] sm:text-[10px] font-black text-slate-300 uppercase tracking-widest">
           {slots.length > 0 ? `Current Slots (${slots.length})` : "No slots added yet"}
         </p>
-        <div className="flex flex-wrap gap-2 sm:gap-3 p-4 sm:p-6 bg-slate-50 rounded-xl sm:rounded-2xl border-2 border-dashed min-h-[80px] sm:min-h-[100px]">
+        <div className="flex flex-wrap gap-2 sm:gap-3 p-4 sm:p-6 bg-slate-50 rounded-xl sm:rounded-2xl border-2 border-dashed min-h-20 sm:min-h-25">
           {slots.map((s) => (
             <div
               key={s}
@@ -1084,7 +1084,7 @@ const MobileSidebar = ({
 
       {/* Sidebar Panel */}
       <div
-        className={`fixed top-0 left-0 h-full w-[280px] bg-white z-50 lg:hidden transform transition-transform duration-300 ease-in-out shadow-2xl ${
+        className={`fixed top-0 left-0 h-full w-70 bg-white z-50 lg:hidden transform transition-transform duration-300 ease-in-out shadow-2xl ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -1116,7 +1116,7 @@ const MobileSidebar = ({
                 style={{ animationDelay: `${index * 50}ms` }}
                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
                   activeTab === item.name
-                    ? "bg-gradient-to-r from-[#3F2965] to-[#Dd1764] text-white shadow-lg"
+                    ? "bg-linear-to-r from-[#3F2965] to-[#Dd1764] text-white shadow-lg"
                     : "text-slate-500 hover:text-[#3F2965] hover:bg-slate-50"
                 }`}
               >
@@ -1158,7 +1158,7 @@ const BottomNavigation = ({ navItems, activeTab, setActiveTab }) => {
               key={item.name}
               href={`#${encodeURIComponent(item.name)}`}
               onClick={() => setActiveTab(item.name)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all min-w-[60px] ${
+              className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all min-w-15 ${
                 isActive ? "text-[#Dd1764] bg-pink-50" : "text-slate-400"
               }`}
             >

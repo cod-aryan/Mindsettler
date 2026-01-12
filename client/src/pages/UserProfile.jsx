@@ -205,7 +205,7 @@ const WalletView = ({ user }) => {
   return (
     <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500">
       {/* Balance Card */}
-      <div className="bg-gradient-to-br from-[#3F2965] to-[#5a3e8c] p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-[2.5rem] text-white shadow-lg relative overflow-hidden">
+      <div className="bg-linear-to-br from-[#3F2965] to-[#5a3e8c] p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-[2.5rem] text-white shadow-lg relative overflow-hidden">
         <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 sm:w-48 sm:h-48 text-white/10 rotate-12" />
         <div className="relative z-10">
           <p className="text-purple-200 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1">
@@ -654,7 +654,7 @@ const MobileSidebar = ({ isOpen, onClose, menuItems, activeTab, setActiveTab, on
 
       {/* Sidebar Panel */}
       <div
-        className={`fixed top-0 left-0 h-full w-[280px] bg-white z-50 lg:hidden transform transition-transform duration-300 ease-in-out shadow-2xl ${
+        className={`fixed top-0 left-0 h-full w-70 bg-white z-50 lg:hidden transform transition-transform duration-300 ease-in-out shadow-2xl ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -686,7 +686,7 @@ const MobileSidebar = ({ isOpen, onClose, menuItems, activeTab, setActiveTab, on
                 style={{ animationDelay: `${index * 50}ms` }}
                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
                   activeTab === item.name
-                    ? "bg-gradient-to-r from-[#3F2965] to-[#Dd1764] text-white shadow-lg"
+                    ? "bg-linear-to-r from-[#3F2965] to-[#Dd1764] text-white shadow-lg"
                     : "text-slate-500 hover:text-[#3F2965] hover:bg-slate-50"
                 }`}
               >
@@ -723,7 +723,7 @@ const BottomNavigation = ({ menuItems, activeTab, setActiveTab }) => {
               key={item.name}
               href={`#${encodeURIComponent(item.name)}`}
               onClick={() => setActiveTab(item.name)}
-              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[60px] ${
+              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-15 ${
                 isActive
                   ? "text-[#Dd1764] bg-pink-50"
                   : "text-slate-400"

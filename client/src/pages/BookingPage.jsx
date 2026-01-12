@@ -422,7 +422,7 @@ const SlotGroup = ({
           style={{ animationDelay: `${index * 0.05}s` }}
         >
           <span className="flex items-center justify-center gap-1 md:gap-2">
-            {selectedSlot === s && <Check size={12} className="animate-scale-in md:w-[14px] md:h-[14px]" />}
+            {selectedSlot === s && <Check size={12} className="animate-scale-in md:w-3.5 md:h-3.5" />}
             <span className="whitespace-nowrap">{formatter(s)}</span>
           </span>
         </RippleButton>
@@ -883,7 +883,7 @@ const BookingPage = () => {
           <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 overflow-hidden pb-4">
             {/* Sidebar */}
             <aside className="flex flex-col gap-4 md:gap-6 overflow-hidden animate-fade-in-left">
-              <div className="glass p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] border border-white/50 shadow-xl shadow-purple-100/20 flex-1 overflow-y-auto custom-scrollbar max-h-[400px] lg:max-h-none">
+              <div className="glass p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] border border-white/50 shadow-xl shadow-purple-100/20 flex-1 overflow-y-auto custom-scrollbar max-h-100 lg:max-h-none">
                 <h2 className="font-black text-base md:text-lg mb-4 md:mb-6 text-[#3F2965] flex items-center gap-2">
                   <Sparkles size={20} className="text-[#Dd1764]" />
                   THERAPY TYPE
@@ -933,7 +933,7 @@ const BookingPage = () => {
                 {/* Date Picker */}
                 <div className="mb-6 md:mb-10 animate-fade-in-up">
                   <SectionTitle
-                    icon={<CalendarIcon size={16} className="md:w-[18px] md:h-[18px]" />}
+                    icon={<CalendarIcon size={16} className="md:w-4.5 md:h-4.5" />}
                     title="Choose Date"
                     subtitle="Select your preferred date"
                   />
@@ -956,7 +956,7 @@ const BookingPage = () => {
                         <Loader2 size={18} className="animate-spin" />
                       ) : (
                         <>
-                          <Search size={16} className="md:w-[18px] md:h-[18px]" />
+                          <Search size={16} className="md:w-4.5 md:h-4.5" />
                           <span className="hidden sm:inline">Find Slots</span>
                         </>
                       )}
@@ -1016,7 +1016,7 @@ const BookingPage = () => {
                 {/* Notes */}
                 <div className="mt-8 md:mt-12 animate-fade-in-up delay-400">
                   <SectionTitle
-                    icon={<MessageSquare size={16} className="md:w-[18px] md:h-[18px]" />}
+                    icon={<MessageSquare size={16} className="md:w-4.5 md:h-4.5" />}
                     title="Session Notes"
                     subtitle="Private & Confidential"
                   />
