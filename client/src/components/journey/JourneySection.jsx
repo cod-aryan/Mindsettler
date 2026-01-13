@@ -98,7 +98,7 @@ const JourneySection = () => {
 
     return (
       <div
-        className="relative w-[320px] h-[420px] cursor-pointer"
+        className="relative w-80 h-105 cursor-pointer"
         style={{ perspective: "1500px" }}
         onMouseEnter={() => setOpenBook(index)}
         onMouseLeave={() => setOpenBook(null)}
@@ -152,7 +152,7 @@ const JourneySection = () => {
                   transition={{ delay: isOpen ? 0.4 + i * 0.1 : 0 }}
                   className="flex items-start gap-2 text-[#3F2965]/70 text-sm"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#Dd1764] mt-1.5 flex-shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#Dd1764] mt-1.5 shrink-0" />
                   {point}
                 </motion.li>
               ))}
@@ -162,7 +162,7 @@ const JourneySection = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: isOpen ? 1 : 0 }}
               transition={{ delay: isOpen ? 0.7 : 0 }}
-              className="mt-4 p-3 bg-gradient-to-r from-[#3F2965]/5 to-[#Dd1764]/5 rounded-lg border-l-3 border-[#Dd1764]"
+              className="mt-4 p-3 bg-linear-to-r from-[#3F2965]/5 to-[#Dd1764]/5 rounded-lg border-l-3 border-[#Dd1764]"
             >
               <p className="text-[#3F2965]/60 italic text-xs">
                 "{step.innerContent.quote}"
@@ -182,7 +182,7 @@ const JourneySection = () => {
 
         {/* Book Spine */}
         <motion.div
-          className="absolute top-0 bottom-0 w-[12px] bg-gradient-to-r from-[#2a1f3d] via-[#3F2965] to-[#2a1f3d] rounded-l-sm z-10"
+          className="absolute top-0 bottom-0 w-3 bg-linear-to-r from-[#2a1f3d] via-[#3F2965] to-[#2a1f3d] rounded-l-sm z-10"
           style={{
             left: 0,
             transformOrigin: "left center",
@@ -195,7 +195,7 @@ const JourneySection = () => {
 
         {/* Front Cover (Flips) */}
         <motion.div
-          className="absolute inset-0 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200"
+          className="absolute inset-0 rounded-xl overflow-hidden bg-linear-to-br from-gray-100 to-gray-200"
           style={{
             transformStyle: "preserve-3d",
             transformOrigin: "left center",
@@ -215,7 +215,7 @@ const JourneySection = () => {
             style={{ backfaceVisibility: "hidden" }}
           >
             {/* Decorative top accent */}
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#3F2965] to-[#Dd1764]" />
+            <div className="absolute top-0 left-0 right-0 h-2 bg-linear-to-r from-[#3F2965] to-[#Dd1764]" />
             
             {/* Icon */}
             <motion.span 
@@ -246,14 +246,14 @@ const JourneySection = () => {
             </motion.div>
 
             {/* Step number */}
-            <div className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-gradient-to-br from-[#3F2965] to-[#Dd1764] flex items-center justify-center">
+            <div className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-linear-to-br from-[#3F2965] to-[#Dd1764] flex items-center justify-center">
               <span className="text-white font-bold">{index + 1}</span>
             </div>
           </div>
 
           {/* Back Face (visible when flipped) */}
           <div
-            className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white rounded-xl"
+            className="absolute inset-0 bg-linear-to-br from-gray-50 to-white rounded-xl"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
@@ -278,7 +278,7 @@ const JourneySection = () => {
             </div>
 
             {/* Bookmark */}
-            <div className="absolute top-0 right-6 w-6 h-12 bg-gradient-to-b from-[#Dd1764] to-[#b01350] rounded-b-sm" />
+            <div className="absolute top-0 right-6 w-6 h-12 bg-linearo-b from-[#Dd1764] to-[#b01350] rounded-b-sm" />
           </div>
         </motion.div>
 
@@ -289,7 +289,7 @@ const JourneySection = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.3 }}
               exit={{ opacity: 0 }}
-              className="absolute top-0 bottom-0 left-0 w-8 bg-gradient-to-r from-black/20 to-transparent z-5"
+              className="absolute top-0 bottom-0 left-0 w-8 bg-linear-to-r from-black/20 to-transparent z-5"
               style={{ transformOrigin: "left" }}
             />
           )}
@@ -316,57 +316,7 @@ const JourneySection = () => {
         `,
       }}
     >
-      {/* Animated Gradient Orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          style={{ y: y1 }}
-          animate={{
-            x: [0, 50, 0],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-20 -left-20 w-[500px] h-[500px] rounded-full opacity-40"
-        />
-        
-        <motion.div
-          style={{ y: y2 }}
-          animate={{
-            x: [0, -60, 0],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/4 -right-32 w-[600px] h-[600px] rounded-full opacity-30"
-        />
 
-        {/* Floating Sparkles */}
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0.3, 1, 0.3],
-              scale: [0.8, 1.2, 0.8],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20">
-              <path
-                d="M10 0L12 8L20 10L12 12L10 20L8 12L0 10L8 8L10 0Z"
-                fill={i % 2 === 0 ? "rgba(221,23,100,0.3)" : "rgba(63,41,101,0.3)"}
-              />
-            </svg>
-          </motion.div>
-        ))}
-      </div>
 
       {/* Decorative Top Wave */}
       <svg className="absolute top-0 left-0 w-full h-32 opacity-50" preserveAspectRatio="none" viewBox="0 0 1440 120">
@@ -392,7 +342,7 @@ const JourneySection = () => {
             transition={{ duration: 0.6 }}
             className="inline-block mb-6"
           >
-            <span className="px-6 py-2 rounded-full bg-gradient-to-r from-[#3F2965]/10 to-[#Dd1764]/10 border border-[#3F2965]/20 text-[#Dd1764] font-bold tracking-[0.3em] uppercase text-sm">
+            <span className="px-6 py-2 rounded-full bg-linear-to-r from-[#3F2965]/10 to-[#Dd1764]/10 border border-[#3F2965]/20 text-[#Dd1764] font-bold tracking-[0.3em] uppercase text-sm">
               The Path Forward
             </span>
           </motion.div>
@@ -401,7 +351,7 @@ const JourneySection = () => {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-5xl md:text-7xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#3F2965] via-[#7c3aed] to-[#Dd1764] mt-4"
+            className="text-5xl md:text-7xl font-serif font-bold text-transparent bg-clip-text bg-linear-to-r from-[#3F2965] via-[#7c3aed] to-[#Dd1764] mt-4"
           >
             Your Mental Wellness Journey
           </motion.h2>
@@ -425,7 +375,7 @@ const JourneySection = () => {
             {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
-                className="w-2 h-2 rounded-full bg-gradient-to-r from-[#3F2965] to-[#Dd1764]"
+                className="w-2 h-2 rounded-full bg-linear-to-r from-[#3F2965] to-[#Dd1764]"
                 animate={{ scale: [1, 1.5, 1] }}
                 transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
               />
@@ -495,13 +445,13 @@ const JourneySection = () => {
                   className={`absolute top-1/2 ${step.side === "left" ? "-right-16" : "-left-16"} flex items-center gap-2`}
                 >
                   <motion.div
-                    className="w-12 h-0.5 bg-gradient-to-r from-[#3F2965]/30 to-[#Dd1764]/30"
+                    className="w-12 h-0.5 bg-linear-to-r from-[#3F2965]/30 to-[#Dd1764]/30"
                     initial={{ scaleX: 0 }}
                     whileInView={{ scaleX: 1 }}
                     transition={{ delay: 0.5 }}
                   />
                   <motion.div
-                    className="w-4 h-4 rounded-full bg-gradient-to-br from-[#3F2965] to-[#Dd1764] shadow-lg"
+                    className="w-4 h-4 rounded-full bg-linear-to-br from-[#3F2965] to-[#Dd1764] shadow-lg"
                     animate={{
                       scale: [1, 1.3, 1],
                       boxShadow: [
@@ -531,12 +481,12 @@ const JourneySection = () => {
           >
             {/* Button Glow */}
             <motion.div
-              className="absolute inset-0 rounded-full bg-gradient-to-r from-[#3F2965] to-[#Dd1764] blur-xl opacity-40"
+              className="absolute inset-0 rounded-full bg-linear-to-r from-[#3F2965] to-[#Dd1764] blur-xl opacity-40"
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             />
             
-            <button className="relative px-12 py-5 rounded-full bg-gradient-to-r from-[#3F2965] via-[#5a3d7a] to-[#Dd1764] text-white font-bold text-lg shadow-2xl hover:shadow-[#Dd1764]/30 transition-shadow duration-300">
+            <button className="relative px-12 py-5 rounded-full bg-linear-to-r from-[#3F2965] via-[#5a3d7a] to-[#Dd1764] text-white font-bold text-lg shadow-2xl hover:shadow-[#Dd1764]/30 transition-shadow duration-300">
               <span className="flex items-center gap-3">
                 Start Your Story
                 <motion.span

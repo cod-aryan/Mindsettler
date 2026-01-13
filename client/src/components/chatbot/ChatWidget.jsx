@@ -88,7 +88,7 @@ const defaultQuickReplies = [
 const TypingIndicator = () => (
   <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
     <div className="flex items-end gap-2">
-      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-[#3F2965] via-[#5a3d8a] to-[#DD1764] p-0.5 shadow-lg">
+      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-linear-to-br from-[#3F2965] via-[#5a3d8a] to-[#DD1764] p-0.5 shadow-lg">
         <div className="w-full h-full rounded-2xl bg-white flex items-center justify-center">
           <img src={botAvatar} alt="" className="w-5 h-5 object-contain" />
         </div>
@@ -98,7 +98,7 @@ const TypingIndicator = () => (
           {[0, 1, 2].map((i) => (
             <span
               key={i}
-              className="w-2 h-2 bg-gradient-to-r from-[#3F2965] to-[#DD1764] rounded-full animate-bounce"
+              className="w-2 h-2 bg-linear-to-r from-[#3F2965] to-[#DD1764] rounded-full animate-bounce"
               style={{ animationDelay: `${i * 150}ms` }}
             />
           ))}
@@ -137,11 +137,11 @@ const QuickActions = ({ buttons, onSelect, isAnimated = true }) => {
             onClick={() => onSelect(buttonText)}
             style={{ animationDelay: `${i * 100}ms` }}
             className="group flex items-center gap-1.5 px-3 py-2 
-                       bg-white hover:bg-gradient-to-r hover:from-[#3F2965] hover:to-[#DD1764] 
+                       bg-white hover:bg-linear-to-r hover:from-[#3F2965] hover:to-[#DD1764] 
                        border border-slate-200 hover:border-transparent 
                        rounded-full text-xs font-bold text-slate-600 hover:text-white 
                        shadow-sm hover:shadow-lg 
-                       transition-all duration-300 hover:scale-105 active:scale-95"
+                       transition-all duration-500 hover:scale-105 active:scale-95"
           >
             {buttonEmoji && <span>{buttonEmoji}</span>}
             <span>{buttonText}</span>
@@ -164,10 +164,10 @@ const NavigationButton = ({ target, onNavigate, customLabel }) => {
     <button
       onClick={() => onNavigate(target)}
       className={`mt-3 w-full flex items-center justify-center gap-2 
-                  py-3 px-4 bg-gradient-to-r ${config.color}
+                  py-3 px-4 bg-linear-to-r ${config.color}
                   text-white font-bold text-sm rounded-xl 
                   shadow-lg hover:shadow-xl 
-                  transition-all duration-300 
+                  transition-all 
                   hover:scale-[1.02] active:scale-[0.98]
                   animate-in fade-in slide-in-from-bottom-2 duration-500
                   group`}
@@ -192,7 +192,7 @@ const MessageBubble = ({ message, isUser, isLatest, onNavigate, onQuickReply }) 
       {/* Bot Avatar */}
       {!isUser && (
         <div className="relative mr-2 mt-1 shrink-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-[#3F2965] via-[#5a3d8a] to-[#DD1764] p-0.5 shadow-lg transition-transform group-hover:scale-105">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-linear-to-br from-[#3F2965] via-[#5a3d8a] to-[#DD1764] p-0.5 shadow-lg transition-transform group-hover:scale-105">
             <div className="w-full h-full rounded-2xl bg-white flex items-center justify-center overflow-hidden">
               <img src={botAvatar} alt="" className="w-5 h-5 object-contain" />
             </div>
@@ -216,7 +216,7 @@ const MessageBubble = ({ message, isUser, isLatest, onNavigate, onQuickReply }) 
           `}
         >
           {!isUser && (
-            <div className="absolute inset-0 rounded-2xl rounded-tl-sm bg-gradient-to-br from-purple-50/30 to-pink-50/30 pointer-events-none" />
+            <div className="absolute inset-0 rounded-2xl rounded-tl-sm bg-linear-to-br from-purple-50/30 to-pink-50/30 pointer-events-none" />
           )}
           <span className="relative z-10">{message.content}</span>
         </div>
@@ -264,7 +264,7 @@ const MessageBubble = ({ message, isUser, isLatest, onNavigate, onQuickReply }) 
 
       {/* User Avatar */}
       {isUser && (
-        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-bold text-sm shadow-lg ml-2 mt-1 shrink-0">
+        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-linear-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-bold text-sm shadow-lg ml-2 mt-1 shrink-0">
           {message.userName?.charAt(0) || "U"}
         </div>
       )}
@@ -581,17 +581,17 @@ const ChatWidget = ({ user }) => {
         <>
           {/* Mobile overlay */}
           <div
-            className="md:hidden fixed inset-0 bg-gradient-to-b from-[#3F2965]/30 to-[#DD1764]/20 backdrop-blur-md z-40 animate-in fade-in duration-300"
+            className="md:hidden fixed inset-0 bg-linear-to-b from-[#3F2965]/30 to-[#DD1764]/20 backdrop-blur-md z-40 animate-in fade-in duration-300"
             onClick={handleClose}
           />
 
           {/* Chat Container */}
-          <div className="fixed z-50 inset-0 md:inset-auto md:bottom-24 md:right-6 md:w-[380px] lg:w-[420px] md:h-[580px] lg:h-[620px] md:rounded-3xl bg-gradient-to-b from-white/95 to-white/90 backdrop-blur-xl md:shadow-2xl md:border md:border-white/50 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-500">
+          <div className="fixed z-50 inset-0 md:inset-auto md:bottom-24 md:right-6 md:w-95 lg:w-105 md:h-145 lg:h-155 md:rounded-3xl bg-linear-to-b from-white/95 to-white/90 backdrop-blur-xl md:shadow-2xl md:border md:border-white/50 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-500">
             
             {/* === HEADER === */}
             <div className="shrink-0 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#3F2965] via-[#5a3d8a] to-[#DD1764]" />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/10" />
+              <div className="absolute inset-0 bg-linear-to-r from-[#3F2965] via-[#5a3d8a] to-[#DD1764]" />
+              <div className="absolute inset-0 bg-linear-to-b from-transparent to-black/10" />
 
               <div className="relative px-4 py-4 flex justify-between items-center safe-area-top">
                 <div className="flex items-center gap-3">
@@ -645,7 +645,7 @@ const ChatWidget = ({ user }) => {
                   {/* Close Button */}
                   <button
                     onClick={handleClose}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-white/20 hover:bg-white/30 active:scale-95 rounded-xl transition-all text-white min-h-[44px]"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-white/20 hover:bg-white/30 active:scale-95 rounded-xl transition-all text-white min-h-11"
                   >
                     <span className="text-xs font-bold md:hidden">Close</span>
                     <X size={18} />
@@ -685,8 +685,8 @@ const ChatWidget = ({ user }) => {
 
               {/* Privacy Badge */}
               <div className="flex justify-center pt-4 pb-2">
-                <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 rounded-full border border-slate-200/50">
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/20">
+                <div className="flex items-center gap-1.5 px-4 py-2 bg-linear-to-r from-slate-50 to-slate-100 rounded-full border border-slate-200/50">
+                  <div className="w-5 h-5 rounded-full bg-linear-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/20">
                     <ShieldCheck size={10} className="text-white" />
                   </div>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
@@ -709,9 +709,9 @@ const ChatWidget = ({ user }) => {
                 <button
                   type="submit"
                   disabled={loading || !message.trim()}
-                  className={`p-3 rounded-xl transition-all duration-300 min-h-[48px] min-w-[48px] flex items-center justify-center ${
+                  className={`p-3 rounded-xl transition-all duration-300 min-h-12 min-w-12 flex items-center justify-center ${
                     message.trim()
-                      ? "bg-gradient-to-r from-[#3F2965] to-[#DD1764] text-white shadow-lg hover:shadow-xl active:scale-95"
+                      ? "bg-linear-to-r from-[#3F2965] to-[#DD1764] text-white shadow-lg hover:shadow-xl active:scale-95"
                       : "bg-slate-100 text-slate-300"
                   }`}
                 >
@@ -732,7 +732,7 @@ const ChatWidget = ({ user }) => {
             {/* Mobile Close Button */}
             <button
               onClick={handleClose}
-              className="md:hidden fixed top-24 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-5 py-2.5 bg-slate-900/90 backdrop-blur-xl rounded-full text-white shadow-2xl border border-white/10 animate-in slide-in-from-top-5 duration-500"
+              className="md:hidden fixed top-24 left-1/2 -translate-x-1/2 z-60 flex items-center gap-2 px-5 py-2.5 bg-slate-900/90 backdrop-blur-xl rounded-full text-white shadow-2xl border border-white/10 animate-in slide-in-from-top-5 duration-500"
             >
               <ArrowDown size={16} className="animate-bounce" />
               <span className="text-sm font-bold">Close Chat</span>
@@ -745,7 +745,7 @@ const ChatWidget = ({ user }) => {
       <div
         ref={buttonRef}
         style={buttonPositionStyles}
-        className={`z-[60] touch-none ${isOpen ? "scale-0 md:scale-100 pointer-events-none md:pointer-events-auto" : "scale-100"} transition-transform duration-300`}
+        className={`z-60 touch-none ${isOpen ? "scale-0 md:scale-100 pointer-events-none md:pointer-events-auto" : "scale-100"} transition-transform duration-300`}
       >
         {/* Drag indicator */}
         <div className={`absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 bg-slate-800/80 backdrop-blur-sm text-white text-[9px] font-bold rounded-full transition-all duration-300 ${isDragging ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}>
@@ -756,8 +756,8 @@ const ChatWidget = ({ user }) => {
         {/* Pulsing rings */}
         {!isOpen && !isDragging && (
           <>
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#3F2965] to-[#DD1764] animate-ping opacity-20" />
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#3F2965] to-[#DD1764] animate-ping opacity-10" style={{ animationDelay: "0.5s" }} />
+            <div className="absolute inset-0 rounded-full bg-linear-to-r from-[#3F2965] to-[#DD1764] animate-ping opacity-20" />
+            <div className="absolute inset-0 rounded-full bg-linear-to-r from-[#3F2965] to-[#DD1764] animate-ping opacity-10" style={{ animationDelay: "0.5s" }} />
           </>
         )}
 
@@ -768,7 +768,7 @@ const ChatWidget = ({ user }) => {
           onClick={handleButtonClick}
           className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-2xl border-4 border-white select-none transition-all duration-300 ${
             isDragging ? "cursor-grabbing scale-110" : "cursor-grab"
-          } ${isOpen ? "bg-slate-800 rotate-180" : "bg-gradient-to-br from-[#3F2965] via-[#5a3d8a] to-[#DD1764] hover:shadow-purple-500/50"} ${
+          } ${isOpen ? "bg-slate-800 rotate-180" : "bg-linear-to-br from-[#3F2965] via-[#5a3d8a] to-[#DD1764] hover:shadow-purple-500/50"} ${
             !isDragging && !isOpen ? "hover:scale-110 active:scale-95" : ""
           }`}
           style={{ touchAction: "none" }}

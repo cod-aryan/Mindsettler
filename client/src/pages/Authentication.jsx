@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail,
   Lock,
   User,
-  Sparkles,
   Eye,
   EyeOff,
   ArrowRight,
@@ -20,34 +19,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Login_img from "../assets/images/Login_img-removebg-preview.png";
 
-// Floating particles for background ambiance
-const FloatingParticles = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none">
-    {[...Array(20)].map((_, i) => (
-      <motion.div
-        key={i}
-        className="absolute w-2 h-2 rounded-full"
-        style={{
-          left: `${Math.random() * 100}%`,
-          top: `${Math.random() * 100}%`,
-          background: `linear-gradient(135deg, ${
-            i % 2 === 0 ? "#3F2965" : "#DD1764"
-          }20, transparent)`,
-        }}
-        animate={{
-          y: [0, -30, 0],
-          opacity: [0.3, 0.8, 0.3],
-          scale: [1, 1.2, 1],
-        }}
-        transition={{
-          duration: 3 + Math.random() * 2,
-          repeat: Infinity,
-          delay: Math.random() * 2,
-        }}
-      />
-    ))}
-  </div>
-);
 
 // Feature badges component
 const FeatureBadge = ({ icon: Icon, text, delay }) => (
@@ -73,8 +44,6 @@ const IllustrationSection = ({ illustrationSrc }) => (
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-[#DD1764]/5 rounded-full blur-3xl" />
     </div>
 
-    {/* Floating particles */}
-    <FloatingParticles />
 
     {/* Arch background */}
     <motion.div
@@ -151,20 +120,11 @@ const MobileIllustration = ({ illustrationSrc }) => (
       transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
     />
 
-    {/* Decorative sparkles */}
-    <motion.div
-      className="absolute top-4 right-1/4"
-      animate={{ rotate: 360 }}
-      transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-    >
-      <Sparkles size={16} className="text-[#DD1764]/40" />
-    </motion.div>
     <motion.div
       className="absolute bottom-1/3 left-1/4"
       animate={{ rotate: -360 }}
       transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
     >
-      <Sparkles size={12} className="text-[#3F2965]/40" />
     </motion.div>
   </motion.div>
 );
@@ -569,7 +529,6 @@ const AuthPage = () => {
                         ease: "linear",
                       }}
                     >
-                      <Sparkles size={20} />
                     </motion.div>
                   ) : (
                     <>
