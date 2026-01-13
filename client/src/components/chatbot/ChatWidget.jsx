@@ -525,7 +525,7 @@ const ChatWidget = ({ user }) => {
       if (mood_detected) setCurrentMood(mood_detected);
 
       // Handle navigation intents
-      const navigationIntents = ["BOOK_SESSION", "NAVIGATE_BOOKING", "NAVIGATE_BLOGS", "NAVIGATE_CONTACT", "NAVIGATE_PROFILE", "NAVIGATE_CORPORATE", "NAVIGATE_LOGOUT"];
+      const navigationIntents = ["NAVIGATE_HOME", "BOOK_SESSION", "NAVIGATE_BOOKING", "NAVIGATE_BLOGS", "NAVIGATE_CONTACT", "NAVIGATE_PROFILE", "NAVIGATE_CORPORATE", "NAVIGATE_LOGOUT"];
       
       // Auto-navigate
       if (navigationIntents.includes(intent) && action?.target) {
@@ -806,32 +806,6 @@ const ChatWidget = ({ user }) => {
           </button>
         )}
       </div>
-
-      {/* === NOTIFICATION BUBBLE === */}
-      {!isOpen && showNotification && !isDragging && (
-        <div style={getNotificationPosition()} className="z-[59] animate-in fade-in slide-in-from-right-5 duration-700 delay-1000">
-          <div className="relative max-w-[220px]">
-            <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-100 relative overflow-hidden group hover:shadow-2xl transition-shadow">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3F2965] to-[#DD1764]" />
-              
-              <button onClick={() => setShowNotification(false)} className="absolute top-2 right-2 p-1 hover:bg-slate-100 rounded-full transition-colors opacity-0 group-hover:opacity-100">
-                <X size={12} className="text-slate-400" />
-              </button>
-
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3F2965] to-[#DD1764] flex items-center justify-center shrink-0 shadow-lg">
-                  <MessageCircle size={18} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-700">Need someone to talk to? 💜</p>
-                  <p className="text-[10px] text-slate-400 mt-1">I'm here to help</p>
-                </div>
-              </div>
-            </div>
-            <div className="absolute -bottom-2 right-8 w-4 h-4 bg-white border-r border-b border-slate-100 transform rotate-45" />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
