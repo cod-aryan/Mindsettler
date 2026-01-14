@@ -11,9 +11,8 @@ import BookingPage from "./pages/BookingPage.jsx";
 import CorporateServices from "./pages/CorporateServices.jsx";
 import UserProfile from "./pages/UserProfile.jsx";
 import ChatWidget from "./components/chatbot/ChatWidget.jsx";
-import BlogPage from "./pages/BlogPage.jsx";
-import BlogDetail from "./pages/BlogDetail.jsx";
 import AboutUsPage from "./pages/aboutUs.jsx";
+import ResourcesPage from "./pages/Resources.jsx";
 
 // A small component to wrap public pages with the Navbar
 
@@ -29,12 +28,11 @@ function App() {
         <Route path="/booking" element={<BookingPage/>}/>
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/corporate" element={<CorporateServices/>}/>
-        <Route path="/blogs" element={<BlogPage/>}/>
-        <Route path="/blog/:id" element={<BlogDetail/>}/>
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="aboutus" element={<AboutUsPage/>}/>
+        <Route path="/aboutus" element={<AboutUsPage/>}/>
+        <Route path="/resources" element={<ResourcesPage/>}/>
         {/* GROUP 2: Admin Pages (No Public Navbar) */}
         {/* Your AdminDashboard has its own Sidebar, so it doesn't need a wrapper */}
         <Route path="/admin" element={<AdminDashboard />} />

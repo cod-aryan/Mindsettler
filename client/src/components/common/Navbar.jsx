@@ -52,7 +52,7 @@ const Navbar = () => {
   const baseLinks = [
     { name: "Home", href: "/" },
     { name: "Booking", href: "/booking" },
-    { name: "Blogs", href: "/blogs" },
+    { name: "Resources", href: "/resources" },
     { name: "Corporate Services", href: "/corporate" },
     { name: "Contact", href: "/contact" },
     {name: "About Us", href:"/aboutus"}

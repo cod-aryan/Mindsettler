@@ -1323,7 +1323,6 @@ const BookingPage = () => {
           </div>
         </main>
       </div>
-      <StatsSection />
       <Footer />
     </>
   );
