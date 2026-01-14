@@ -3,13 +3,13 @@ import { body } from "express-validator";
 import { userSignup, login, forgotPassword, getMe, logout, sendContactEmail, profileUpdate, sendCorporateEmail } from "../controllers/userController.js";
 import { protect } from "../middlewares/userMiddleware.js";
 import { validate } from "../middlewares/validationMiddleware.js";
+import { authLimiter } from '../middlewares/rateLimiter.js';
 
 const router = express.Router();
 
-// --- VALIDATED ROUTES ---
-
 router.post(
   "/signup",
+  authLimiter,
   [
     body("name")
     .isLength({ min: 3, max: 50 })
@@ -25,6 +25,7 @@ router.post(
 
 router.post(
   "/login",
+  authLimiter,
   [
     body("email").isEmail().withMessage("Please enter a valid email"),
     body("password").notEmpty().withMessage("Password cannot be empty"),
@@ -35,25 +36,27 @@ router.post(
 
 router.post(
   "/forgot-password",
+  authLimiter,
   [body("email").isEmail().withMessage("Please enter a valid email to reset password")],
   validate,
   forgotPassword
 );
 
-router.get("/logout", protect, logout);
+router.get("/logout", authLimiter, protect, logout);
 
 router.get("/me", protect, getMe);
-router.post("/contact/send", sendContactEmail);
-router.post("/corporate/send", sendCorporateEmail);
-router.patch("/profile", protect,
+router.patch("/profile", authLimiter, protect,
   [
     body("name")
-      .isLength({ min: 3, max: 50 })
-      .withMessage("Name must be between 3 and 50 characters"),
+    .isLength({ min: 3, max: 50 })
+    .withMessage("Name must be between 3 and 50 characters"),
     body("phone")
-      .matches(/^\d{10}$/)
-      .withMessage("Phone must be a 10 digit number"),
+    .matches(/^\d{10}$/)
+    .withMessage("Phone must be a 10 digit number"),
   ],
   validate, profileUpdate);
 
+router.post("/contact/send", sendContactEmail);
+router.post("/corporate/send", sendCorporateEmail);
+  
 export default router;

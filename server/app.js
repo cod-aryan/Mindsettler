@@ -16,11 +16,13 @@ import walletTransactionsRoute from './routes/walletRoute.js'
 import chatRoutes from "./routes/chat.routes.js";
 import { protect } from "./middlewares/userMiddleware.js";
 import connectDB from "./config/db.js";
+import { globalLimiter } from './middlewares/rateLimiter.js';
 
 // Connect to Database
 await connectDB();
 const app = express();
 app.set("trust proxy", 1); // Trust first proxy (needed for secure cookies behind proxies)
+app.use(globalLimiter);
 // --- SESSION CONFIGURATION (Must be before routes) ---
 // This enables req.session for your chatbot
 app.use(session({
