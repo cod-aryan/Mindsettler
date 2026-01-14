@@ -598,7 +598,7 @@ const MyBookingsView = () => {
               </div>
 
               {/* Google Meet & Calendar Section */}
-              {session.status === "confirmed" && (
+              {session.status === "confirmed" && session.sessionType ==="online" && (
                 <div className="mb-4 sm:mb-6 space-y-3">
                   {session.meetLink ? (
                     <div className="p-3 sm:p-4 bg-indigo-50/50 rounded-2xl sm:rounded-3xl border border-indigo-100">

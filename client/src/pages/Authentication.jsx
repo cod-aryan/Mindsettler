@@ -12,13 +12,13 @@ import {
   Heart,
   Shield,
   Star,
+  Loader2,
 } from "lucide-react";
 import API from "../api/axios";
 import logo from "../assets/icons/MindsettlerLogo-removebg-preview.png";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Login_img from "../assets/images/Login_img-removebg-preview.png";
-
 
 // Feature badges component
 const FeatureBadge = ({ icon: Icon, text, delay }) => (
@@ -43,7 +43,6 @@ const IllustrationSection = ({ illustrationSrc }) => (
       <div className="absolute top-20 left-20 w-72 h-72 bg-[#3F2965]/5 rounded-full blur-3xl" />
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-[#DD1764]/5 rounded-full blur-3xl" />
     </div>
-
 
     {/* Arch background */}
     <motion.div
@@ -85,11 +84,7 @@ const IllustrationSection = ({ illustrationSrc }) => (
     >
       <div className="flex gap-1 mb-2">
         {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            size={12}
-            className="text-yellow-400 fill-yellow-400"
-          />
+          <Star key={i} size={12} className="text-yellow-400 fill-yellow-400" />
         ))}
       </div>
       <p className="text-[10px] text-[#3F2965]/70 italic leading-relaxed">
@@ -124,8 +119,7 @@ const MobileIllustration = ({ illustrationSrc }) => (
       className="absolute bottom-1/3 left-1/4"
       animate={{ rotate: -360 }}
       transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-    >
-    </motion.div>
+    ></motion.div>
   </motion.div>
 );
 
@@ -163,9 +157,7 @@ const Input = ({ icon, label, rightIcon, error, ...props }) => (
             shadow-sm focus:shadow-lg focus:shadow-[#3F2965]/5
           `}
         />
-        {rightIcon && (
-          <div className="absolute right-4">{rightIcon}</div>
-        )}
+        {rightIcon && <div className="absolute right-4">{rightIcon}</div>}
       </div>
     </div>
     {error && (
@@ -265,7 +257,7 @@ const AuthPage = () => {
     setShowPassword(false);
   }, [view]);
 
-  if (user) return (<Navigate to="/" replace />);
+  if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -297,8 +289,8 @@ const AuthPage = () => {
       }
     } catch (err) {
       const errorMsg = err.response?.data?.errors || [
-        err.response?.data?.message,
-      ] || ["Service unavailable. Please try again."];
+          err.response?.data?.message,
+        ] || ["Service unavailable. Please try again."];
       setErrors(Array.isArray(errorMsg) ? errorMsg : [errorMsg]);
     } finally {
       setIsSubmitting(false);
@@ -458,7 +450,9 @@ const AuthPage = () => {
                         name="password"
                         label="Password"
                         autoComplete={
-                          view === "signup" ? "new-password" : "current-password"
+                          view === "signup"
+                            ? "new-password"
+                            : "current-password"
                         }
                         required
                         rightIcon={
@@ -500,48 +494,45 @@ const AuthPage = () => {
                 <motion.button
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.02, boxShadow: "0 20px 40px -15px rgba(63, 41, 101, 0.3)" }}
+                  whileHover={{
+                    scale: 1.02,
+                    boxShadow: "0 20px 40px -15px rgba(63, 41, 101, 0.3)",
+                  }}
                   whileTap={{ scale: 0.98 }}
                   disabled={isSubmitting}
                   type="submit"
                   className={`
-                    relative w-full py-4 sm:py-4.5 px-6 mt-2
-                    bg-linear-to-r from-[#3F2965] via-[#5a3d8a] to-[#3F2965]
-                    bg-size-[200%_100%] bg-left
-                    hover:bg-right
-                    text-white font-bold text-sm sm:text-base
-                    rounded-xl sm:rounded-2xl
-                    transition-all duration-500
-                    flex items-center justify-center gap-2
-                    shadow-xl shadow-[#3F2965]/20
-                    disabled:opacity-70 disabled:cursor-not-allowed
-                    overflow-hidden
-                    group
-                  `}
+    relative w-full py-4 sm:py-4.5 px-6 mt-2
+    bg-linear-to-r from-[#3F2965] via-[#5a3d8a] to-[#3F2965]
+    bg-size-[200%_100%] bg-left
+    hover:bg-right
+    text-white font-bold text-sm sm:text-base
+    rounded-xl sm:rounded-2xl
+    transition-all duration-500
+    flex items-center justify-center gap-3
+    shadow-xl shadow-[#3F2965]/20
+    disabled:opacity-70 disabled:cursor-not-allowed
+    overflow-hidden
+    group
+  `}
                 >
                   {/* Shine effect */}
                   <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
 
                   {isSubmitting ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                    >
-                    </motion.div>
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                    </>
                   ) : (
                     <>
-                      <span>
+                      <span className="relative z-10">
                         {view === "login" && "Sign In"}
                         {view === "signup" && "Create Account"}
                         {view === "forgot" && "Send Reset Link"}
                       </span>
                       <ArrowRight
                         size={18}
-                        className="group-hover:translate-x-1 transition-transform"
+                        className="group-hover:translate-x-1 transition-transform relative z-10"
                       />
                     </>
                   )}
@@ -551,7 +542,9 @@ const AuthPage = () => {
               {/* Divider */}
               <div className="flex items-center gap-4 my-6">
                 <div className="flex-1 h-px bg-linear-to-r from-transparent via-[#3F2965]/20 to-transparent" />
-                <span className="text-xs text-[#6B4D8A]/40 font-medium">OR</span>
+                <span className="text-xs text-[#6B4D8A]/40 font-medium">
+                  OR
+                </span>
                 <div className="flex-1 h-px bg-linear-to-r from-transparent via-[#3F2965]/20 to-transparent" />
               </div>
 

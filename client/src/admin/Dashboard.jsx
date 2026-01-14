@@ -739,6 +739,7 @@ const AppointmentsView = () => {
               </div>
 
               {/* MEET LINK SECTION (NEW) */}
+              {selectedApp.sessionType === "online" && (
               <div className="bg-blue-50/50 p-4 sm:p-5 rounded-3xl border border-blue-100 animate-in fade-in slide-in-from-top-1">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2 text-blue-700">
@@ -790,7 +791,7 @@ const AppointmentsView = () => {
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
-                    <p className="text-xs sm:text-sm text-blue-900 font-bold truncate max-w-[200px]">
+                    <p className="text-xs sm:text-sm text-blue-900 font-bold truncate max-w-50">
                       {selectedApp.meetLink || "No link assigned yet"}
                     </p>
                     {selectedApp.meetLink && (
@@ -805,7 +806,7 @@ const AppointmentsView = () => {
                     )}
                   </div>
                 )}
-              </div>
+              </div>)}
 
               {/* Client Notes */}
               <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">

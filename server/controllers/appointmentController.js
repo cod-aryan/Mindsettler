@@ -8,7 +8,7 @@ import User from "../models/userModel.js";
 // @access  Private
 export const bookSession = async (req, res) => {
   try {
-    const { therapyType, sessionType, timeSlot, availabilityRef, notes } =
+    const { therapyType, sessionType, timeSlot, availabilityRef, notes, isPaidViaWallet } =
       req.body;
 
     const sessionPrice = Number(process.env.SESSION_PRICE);
@@ -53,11 +53,7 @@ export const bookSession = async (req, res) => {
         return res.status(400).json({ message: "Slot is expired" });
       }
     }
-
-    // 3. Deduct balance from User
-    user.walletBalance -= sessionPrice;
-    await user.save();
-    // 4. Create the Appointment
+    // 3. Create the Appointment
     const appointment = await Appointment.create({
       user: req.user._id,
       availabilityRef,
@@ -65,20 +61,26 @@ export const bookSession = async (req, res) => {
       sessionType,
       timeSlot,
       notes,
-      isPaid: true,
+      isPaid: isPaidViaWallet || sessionType === "online",
       status: "confirmed", // Directly confirmed since paid via wallet
     });
 
-    // 5. Create Wallet Transaction History (The Ledger)
-    await WalletTransaction.create({
-      user: req.user._id,
-      amount: sessionPrice,
-      type: "debit",
-      purpose: "booking",
-      status: "completed",
-      referenceId: appointment._id, // Link to the appointment
-      balanceAfter: user.walletBalance,
-    });
+    if (isPaidViaWallet || sessionType === "online") {
+      // 4. Deduct balance from User
+      user.walletBalance -= sessionPrice;
+      await user.save();
+
+      // 5. Create Wallet Transaction
+      await WalletTransaction.create({
+        user: req.user._id,
+        amount: sessionPrice,
+        type: "debit",
+        purpose: "booking",
+        status: "completed",
+        referenceId: appointment._id, // Link to the appointment
+        balanceAfter: user.walletBalance,
+      });
+    }
 
     res.status(201).json({ success: true, data: appointment });
   } catch (error) {
@@ -102,23 +104,24 @@ export const updateStatus = async (req, res) => {
     }
     if (status === "rejected") {
       const user = await User.findById(appointment.user);
-      const refundAmount = Number(process.env.SESSION_PRICE); // Match session price
+      if (appointment.isPaid) {
+        const refundAmount = Number(process.env.SESSION_PRICE); // Match session price
+        // Refund logic
+        user.walletBalance += refundAmount;
+        await user.save();
 
-      // Refund logic
-      user.walletBalance += refundAmount;
-      await user.save();
-
-      // Create Refund History entry
-      await WalletTransaction.create({
-        user: user._id,
-        amount: refundAmount,
-        type: "credit",
-        purpose: "refund",
-        status: "completed",
-        referenceId: appointment._id,
-        balanceAfter: user.walletBalance,
-      });
-
+        // Create Refund History entry
+        await WalletTransaction.create({
+          user: user._id,
+          amount: refundAmount,
+          type: "credit",
+          purpose: "refund",
+          status: "completed",
+          referenceId: appointment._id,
+          balanceAfter: user.walletBalance,
+        });
+      }
+      // Also, free up the booked slot
       await Availability.updateOne(
         {
           _id: appointment.availabilityRef,
