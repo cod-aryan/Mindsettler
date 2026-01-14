@@ -8,7 +8,7 @@ import {
 import Footer from "../components/common/Footer";
 import Navbar from "../components/common/Navbar";
 import introVideo from "../assets/video/IMG_2808.MOV";
-import { Link } from "react-router";
+import { Link, Links } from "react-router";
 
 const AboutUsPage = () => {
   const containerRef = useRef(null);
@@ -691,6 +691,7 @@ const AboutUsPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1 }}
                 >
+                  <Link to="/resources">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -706,6 +707,7 @@ const AboutUsPage = () => {
                       →
                     </motion.span>
                   </motion.button>
+                  </Link>
                 </motion.div>
               </motion.div>
             </div>

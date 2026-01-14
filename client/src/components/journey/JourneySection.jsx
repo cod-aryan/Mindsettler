@@ -11,11 +11,11 @@ const JourneySection = () => {
     offset: ["start end", "end end"],
   });
 
-  //Slow and smooth animation
+  // Slow and smooth animation
   const pathLength = useSpring(scrollYProgress, {
-    stiffness: 10, // Very low = very slow response
-    damping: 40, // High = smooth, less bouncy
-    restDelta: 0.0001, // Smaller = more precise
+    stiffness: 10,
+    damping: 40,
+    restDelta: 0.0001,
   });
 
   const milestones = [
@@ -83,6 +83,41 @@ const JourneySection = () => {
         quote: "Clarity comes from engagement, not thought.",
       },
     },
+  ];
+
+  // Bubble configuration - matching the reference image style
+  const bubbles = [
+    // Large bubbles
+    { size: 280, x: "5%", y: "8%", opacity: 0.15, color: "purple", delay: 0 },
+    { size: 320, x: "75%", y: "5%", opacity: 0.12, color: "pink", delay: 0.5 },
+    { size: 250, x: "85%", y: "25%", opacity: 0.18, color: "purple", delay: 1 },
+    { size: 300, x: "-5%", y: "35%", opacity: 0.14, color: "pink", delay: 1.5 },
+    { size: 280, x: "70%", y: "45%", opacity: 0.16, color: "purple", delay: 2 },
+    { size: 260, x: "10%", y: "55%", opacity: 0.13, color: "pink", delay: 0.3 },
+    { size: 290, x: "80%", y: "65%", opacity: 0.15, color: "purple", delay: 0.8 },
+    { size: 270, x: "0%", y: "75%", opacity: 0.17, color: "pink", delay: 1.2 },
+    { size: 310, x: "65%", y: "85%", opacity: 0.14, color: "purple", delay: 1.8 },
+    
+    // Medium bubbles
+    { size: 180, x: "30%", y: "12%", opacity: 0.12, color: "pink", delay: 0.2 },
+    { size: 160, x: "55%", y: "20%", opacity: 0.14, color: "purple", delay: 0.7 },
+    { size: 200, x: "20%", y: "30%", opacity: 0.11, color: "pink", delay: 1.1 },
+    { size: 170, x: "45%", y: "42%", opacity: 0.13, color: "purple", delay: 0.4 },
+    { size: 190, x: "60%", y: "55%", opacity: 0.15, color: "pink", delay: 0.9 },
+    { size: 175, x: "35%", y: "68%", opacity: 0.12, color: "purple", delay: 1.4 },
+    { size: 185, x: "50%", y: "78%", opacity: 0.14, color: "pink", delay: 1.7 },
+    { size: 165, x: "25%", y: "88%", opacity: 0.11, color: "purple", delay: 2.1 },
+    
+    // Small bubbles
+    { size: 100, x: "15%", y: "18%", opacity: 0.10, color: "purple", delay: 0.1 },
+    { size: 90, x: "40%", y: "8%", opacity: 0.12, color: "pink", delay: 0.6 },
+    { size: 110, x: "68%", y: "32%", opacity: 0.09, color: "purple", delay: 1.3 },
+    { size: 95, x: "8%", y: "48%", opacity: 0.11, color: "pink", delay: 0.5 },
+    { size: 105, x: "90%", y: "52%", opacity: 0.10, color: "purple", delay: 1.6 },
+    { size: 85, x: "42%", y: "62%", opacity: 0.12, color: "pink", delay: 1.9 },
+    { size: 115, x: "78%", y: "72%", opacity: 0.08, color: "purple", delay: 2.2 },
+    { size: 92, x: "18%", y: "82%", opacity: 0.11, color: "pink", delay: 0.8 },
+    { size: 88, x: "55%", y: "92%", opacity: 0.10, color: "purple", delay: 1.0 },
   ];
 
   // Book Card Component
@@ -262,22 +297,96 @@ const JourneySection = () => {
       ref={containerRef}
       className="relative overflow-hidden"
       style={{
-        background: `
-          linear-gradient(135deg, 
-            #faf5ff 0%, 
-            #f3e8ff 15%,
-            #ede4ff 30%,
-            #fce7f3 50%, 
-            #fdf2f8 70%,
-            #faf5ff 85%,
-            #f5f3ff 100%
-          )
-        `,
+        background: `linear-gradient(135deg, 
+          #faf5ff 0%, 
+          #f5f0ff 20%,
+          #fdf2f8 40%, 
+          #fce7f3 60%,
+          #f3e8ff 80%,
+          #faf5ff 100%
+        )`,
       }}
     >
+      {/* ==================== BUBBLE ANIMATION BACKGROUND ==================== */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {bubbles.map((bubble, index) => (
+          <motion.div
+            key={index}
+            className="absolute rounded-full"
+            style={{
+              width: bubble.size,
+              height: bubble.size,
+              left: bubble.x,
+              top: bubble.y,
+              background: bubble.color === "purple" 
+                ? `radial-gradient(circle at 30% 30%, rgba(139, 92, 246, ${bubble.opacity + 0.05}), rgba(63, 41, 101, ${bubble.opacity}))`
+                : `radial-gradient(circle at 30% 30%, rgba(251, 207, 232, ${bubble.opacity + 0.1}), rgba(221, 23, 100, ${bubble.opacity}))`,
+              filter: "blur(1px)",
+            }}
+            initial={{ 
+              scale: 0.8, 
+              opacity: 0 
+            }}
+            animate={{ 
+              scale: [0.95, 1.05, 0.95],
+              opacity: [bubble.opacity * 0.8, bubble.opacity, bubble.opacity * 0.8],
+              x: [0, 10, -10, 0],
+              y: [0, -15, 5, 0],
+            }}
+            transition={{
+              duration: 8 + index * 0.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: bubble.delay,
+            }}
+          />
+        ))}
+        
+        {/* Extra floating small bubbles for depth */}
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={`small-${i}`}
+            className="absolute rounded-full"
+            style={{
+              width: 40 + Math.random() * 60,
+              height: 40 + Math.random() * 60,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              background: i % 2 === 0 
+                ? `radial-gradient(circle at 30% 30%, rgba(167, 139, 250, 0.15), rgba(139, 92, 246, 0.08))`
+                : `radial-gradient(circle at 30% 30%, rgba(251, 207, 232, 0.18), rgba(244, 114, 182, 0.1))`,
+            }}
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.1, 0.2, 0.1],
+              y: [0, -20, 0],
+            }}
+            transition={{
+              duration: 6 + Math.random() * 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: Math.random() * 3,
+            }}
+          />
+        ))}
+      </div>
+      {/* ==================== END BUBBLE ANIMATION BACKGROUND ==================== */}
+
+      {/* Soft gradient overlay for smoother look */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse at 20% 20%, rgba(255,255,255,0.4) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 80%, rgba(255,255,255,0.3) 0%, transparent 50%),
+            radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.2) 0%, transparent 70%)
+          `,
+        }}
+      />
+
       {/* Decorative Top Wave */}
       <svg
-        className="absolute top-0 left-0 w-full h-32 opacity-50"
+        className="absolute top-0 left-0 w-full h-32 opacity-50 z-10"
         preserveAspectRatio="none"
         viewBox="0 0 1440 120"
       >
@@ -300,7 +409,7 @@ const JourneySection = () => {
         </defs>
       </svg>
 
-      <div className="max-w-6xl mx-auto relative px-4 pt-24">
+      <div className="max-w-6xl mx-auto relative px-4 pt-24 z-10">
         {/* Section Header */}
         <div className="text-center mb-32 relative z-10">
           <motion.div
@@ -309,7 +418,7 @@ const JourneySection = () => {
             transition={{ duration: 0.6 }}
             className="inline-block mb-6"
           >
-            <span className="px-6 py-2 rounded-full bg-gradient-to-r from-[#3F2965]/10 to-[#Dd1764]/10 border border-[#3F2965]/20 text-[#Dd1764] font-bold tracking-[0.3em] uppercase text-sm">
+            <span className="px-6 py-2 rounded-full bg-white/60 backdrop-blur-sm border border-[#3F2965]/20 text-[#Dd1764] font-bold tracking-[0.3em] uppercase text-sm shadow-lg">
               The Path Forward
             </span>
           </motion.div>
