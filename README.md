@@ -6,7 +6,7 @@
 
 **MindSettler** is a professional-grade mental health platform built to democratize access to specialized therapy. Designed by an AI student at **NIT Surat**, this project addresses the logistical friction in mental healthcare through an automated booking engine, a secure internal economy (Wallet), and smart-activation digital session rooms.
 
-🚀 **Live Link:** [https://mindsettler-taupe.vercel.app/auth](https://mindsettler-taupe.vercel.app/)
+🚀 **Live Link:** [https://mindsettler-taupe.vercel.app/](https://mindsettler-taupe.vercel.app/)
 
 ---
 
@@ -76,6 +76,11 @@
 * **JWT in HttpOnly Cookies:** Prevents XSS attacks by ensuring tokens are inaccessible via client-side JavaScript.
 * **Helmet.js Integration:** Implements standard security headers (CSP, HSTS, etc.) to harden the Express server.
 * **CORS Policy:** Strict whitelist-based CORS configuration to ensure only the MindSettler frontend can communicate with the API.
+
+---
+
+## ⚖️ License
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
 ---
 
