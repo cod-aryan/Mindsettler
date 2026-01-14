@@ -52,8 +52,8 @@ export const getPendingAppointments = async (req, res) => {
 export const profileUpdate = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { name, phone, email } = req.body;
-    const updates = {name, phone, email};
+    const { name, phone, email, gender } = req.body;
+    const updates = {name, phone, email, gender, profileIsComplete: true };
 
     // check for email
     if (email) {

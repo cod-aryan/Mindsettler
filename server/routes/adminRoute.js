@@ -18,6 +18,9 @@ router.patch("/profile", protect,
     body("name")
       .isLength({ min: 3, max: 50 })
       .withMessage("Name must be between 3 and 50 characters"),
+    body("gender")
+      .isIn(["Male", "Female", "Other"])
+      .withMessage("Gender must be Male, Female, or Other"),
     body("phone")
       .matches(/^\d{10}$/)
       .withMessage("Phone must be a 10 digit number"),

@@ -40,15 +40,20 @@
 * **B2B Inquiry System:** A dedicated interface for organizations to request custom workshops and employee counseling.
 * **Professional Mailers:** Automated, high-fidelity HTML email templates sent via Nodemailer to the admin for every lead.
 
-### 🎥 Digital Room "Join" Logic
-* **Countdown States:** UI transitions through three states: `Locked` ⮕ `Available Soon` ⮕ `Join Now`.
-* **IST Synchronization:** All scheduling logic is synchronized to **Indian Standard Time (Asia/Kolkata)**.
+### 🎥 Hybrid Session Ecosystem
+* **Digital & Physical:** Support for both **Online (Video)** and **Offline (In-Clinic)** sessions.
+* **Flexible Payments:** Dual-mode checkout allowing users to pay via **Virtual Wallet** for instant digital booking or **Cash-on-Arrival** for physical clinic visits.
+* **Smart Navigation:** Offline bookings automatically replace video room links with integrated **Google Maps navigation** to the MindSettler facility.
+
+### 📖 Post-Session Continuity
+* **Therapist Insights:** Admins can share session summaries and "homework" directly to the user dashboard.
+* **Private Journaling:** Users can record private reflections and breakthroughs for every completed session to track emotional growth.
 
 ---
 
 ## 🛠️ Technical Problem Solving
 
-
+[Image of a sequence diagram showing a client and server exchanging Cache-Control headers to prevent stale responses]
 
 * **Vercel Cookie Persistence:** Solved the "Cookie not saving" issue by setting `app.set("trust proxy", 1)` and configuring JWT cookies with `SameSite: "None"` and `Secure: true`.
 * **304 Not Modified (Logout Bug):** Prevented browsers from caching logout responses by implementing `Cache-Control: no-store` headers, ensuring cookies are cleared every time.
@@ -59,10 +64,11 @@
 
 ## 🏗️ Architecture & Data Modeling
 
-
+[Image of a NoSQL database schema design showing relationships between users, appointments, and wallets]
 
 * **Mongoose Referencing:** Utilizes `DocumentReferences` for relational integrity between `Appointments` and `Users`.
 * **Slugification:** Blog posts use human-readable slugs generated via pre-save hooks for SEO optimization.
+* **Hybrid Logic Schema:** Appointment model handles multi-type booking formats (`sessionType`: online/offline) and varied payment states (`paymentMethod`: wallet/cash).
 
 ---
 

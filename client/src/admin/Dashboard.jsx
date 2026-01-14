@@ -30,6 +30,8 @@ import {
   MapPin,
   Link2,
   ExternalLink,
+  Users,
+  ChevronDown
 } from "lucide-react";
 import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -43,6 +45,7 @@ const AdminProfileView = ({ user, setUser }) => {
     name: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
+    gender: user?.gender || "",
   });
 
   const handleChange = (e) => {
@@ -116,81 +119,118 @@ const AdminProfileView = ({ user, setUser }) => {
         {/* Form Card */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
           <div className="bg-white p-4 sm:p-6 lg:p-10 rounded-2xl sm:rounded-[2.5rem] border shadow-sm">
-            <form
-              onSubmit={handleUpdateProfile}
-              className="space-y-4 sm:space-y-6"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="space-y-1.5 sm:space-y-2">
-                  <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase ml-1">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <User
-                      className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-300"
-                      size={16}
-                    />
-                    <input
-                      name="name"
-                      disabled={!isEditing}
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full pl-10 sm:pl-12 p-3 sm:p-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5 sm:space-y-2">
-                  <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase ml-1">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail
-                      className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-300"
-                      size={16}
-                    />
-                    <input
-                      name="email"
-                      disabled={!isEditing}
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full pl-10 sm:pl-12 p-3 sm:p-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5 sm:space-y-2 sm:col-span-2 lg:col-span-1">
-                  <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase ml-1">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <Phone
-                      className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-300"
-                      size={16}
-                    />
-                    <input
-                      name="phone"
-                      disabled={!isEditing}
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full pl-10 sm:pl-12 p-3 sm:p-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-              {isEditing && (
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-[#Dd1764] text-white rounded-xl sm:rounded-2xl font-black shadow-xl hover:opacity-90 disabled:opacity-50 transition-all"
-                >
-                  {loading ? (
-                    <Loader2 className="animate-spin" size={18} />
-                  ) : (
-                    <Save size={18} />
-                  )}
-                  Save Changes
-                </button>
-              )}
-            </form>
+<form
+  onSubmit={handleUpdateProfile}
+  className="space-y-4 sm:space-y-6"
+>
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+    {/* Full Name */}
+    <div className="space-y-1.5 sm:space-y-2">
+      <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase ml-1">
+        Full Name
+      </label>
+      <div className="relative">
+        <User
+          className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-300"
+          size={16}
+        />
+        <input
+          name="name"
+          disabled={!isEditing}
+          value={formData.name}
+          onChange={handleChange}
+          className="w-full pl-10 sm:pl-12 p-3 sm:p-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
+        />
+      </div>
+    </div>
+
+    {/* Email Address */}
+    <div className="space-y-1.5 sm:space-y-2">
+      <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase ml-1">
+        Email Address
+      </label>
+      <div className="relative">
+        <Mail
+          className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-300"
+          size={16}
+        />
+        <input
+          name="email"
+          disabled={!isEditing}
+          value={formData.email}
+          onChange={handleChange}
+          className="w-full pl-10 sm:pl-12 p-3 sm:p-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
+        />
+      </div>
+    </div>
+
+    {/* Phone Number */}
+    <div className="space-y-1.5 sm:space-y-2">
+      <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase ml-1">
+        Phone Number
+      </label>
+      <div className="relative">
+        <Phone
+          className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-300"
+          size={16}
+        />
+        <input
+          name="phone"
+          disabled={!isEditing}
+          value={formData.phone}
+          onChange={handleChange}
+          className="w-full pl-10 sm:pl-12 p-3 sm:p-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
+        />
+      </div>
+    </div>
+
+    {/* Gender */}
+    <div className="space-y-1.5 sm:space-y-2">
+      <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase ml-1">
+        Gender
+      </label>
+      <div className="relative">
+        <Users
+          className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none"
+          size={16}
+        />
+        <select
+          name="gender"
+          disabled={!isEditing}
+          value={formData.gender}
+          onChange={handleChange}
+          className="w-full pl-10 sm:pl-12 p-3 sm:p-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#3F2965] disabled:opacity-60 transition-all cursor-pointer appearance-none"
+        >
+          <option value="">Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        <ChevronDown
+          className={`absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none ${
+            !isEditing ? "opacity-60" : ""
+          }`}
+          size={16}
+        />
+      </div>
+    </div>
+  </div>
+
+  {isEditing && (
+    <button
+      type="submit"
+      disabled={loading}
+      className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-[#Dd1764] text-white rounded-xl sm:rounded-2xl font-black shadow-xl hover:opacity-90 disabled:opacity-50 transition-all"
+    >
+      {loading ? (
+        <Loader2 className="animate-spin" size={18} />
+      ) : (
+        <Save size={18} />
+      )}
+      Save Changes
+    </button>
+  )}
+</form>
           </div>
         </div>
       </div>

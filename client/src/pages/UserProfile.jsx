@@ -34,6 +34,7 @@ const UserProfileView = ({ user, setUser }) => {
   const [formData, setFormData] = useState({
     name: user?.name || "",
     phone: user?.phone || "",
+    gender: user?.gender || "",
   });
 
   const handleUpdate = async (e) => {
@@ -95,61 +96,90 @@ const UserProfileView = ({ user, setUser }) => {
 
       {/* Profile Form Card */}
       <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
-        <form
-          onSubmit={handleUpdate}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
-        >
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-400 ml-1">
-              Full Name
-            </label>
-            <input
-              disabled={!isEditing}
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-400 ml-1">
-              Email Address
-            </label>
-            <input
-              disabled
-              value={user.email}
-              className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base opacity-60 cursor-not-allowed truncate"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-400 ml-1">
-              Phone Number
-            </label>
-            <input
-              disabled={!isEditing}
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-              className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
-            />
-          </div>
-          {isEditing && (
-            <button
-              type="submit"
-              disabled={loading}
-              className="md:col-span-2 w-full py-3 bg-[#3F2965] text-white rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg hover:opacity-90 transition-all"
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" size={18} />
-              ) : (
-                <Save size={18} />
-              )}
-              Save Changes
-            </button>
-          )}
-        </form>
+<form
+  onSubmit={handleUpdate}
+  className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
+>
+  <div className="space-y-1">
+    <label className="text-xs font-bold text-slate-400 ml-1">
+      Full Name
+    </label>
+    <input
+      disabled={!isEditing}
+      value={formData.name}
+      onChange={(e) =>
+        setFormData({ ...formData, name: e.target.value })
+      }
+      className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
+    />
+  </div>
+  
+  <div className="space-y-1">
+    <label className="text-xs font-bold text-slate-400 ml-1">
+      Email Address
+    </label>
+    <input
+      disabled
+      value={user.email}
+      className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base opacity-60 cursor-not-allowed truncate"
+    />
+  </div>
+  
+  <div className="space-y-1">
+    <label className="text-xs font-bold text-slate-400 ml-1">
+      Phone Number
+    </label>
+    <input
+      disabled={!isEditing}
+      value={formData.phone}
+      onChange={(e) =>
+        setFormData({ ...formData, phone: e.target.value })
+      }
+      className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
+    />
+  </div>
+  
+  <div className="space-y-1">
+    <label className="text-xs font-bold text-slate-400 ml-1">
+      Gender
+    </label>
+    <select
+      disabled={!isEditing}
+      value={formData.gender}
+      onChange={(e) =>
+        setFormData({ ...formData, gender: e.target.value })
+      }
+      className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all cursor-pointer appearance-none"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 12px center',
+        backgroundSize: '20px',
+        paddingRight: '40px'
+      }}
+    >
+      <option value="">Select Gender</option>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
+  
+  {isEditing && (
+    <button
+      type="submit"
+      disabled={loading}
+      className="md:col-span-2 w-full py-3 bg-[#3F2965] text-white rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg hover:opacity-90 transition-all"
+    >
+      {loading ? (
+        <Loader2 className="animate-spin" size={18} />
+      ) : (
+        <Save size={18} />
+      )}
+      Save Changes
+    </button>
+  )}
+</form>
       </div>
     </div>
   );

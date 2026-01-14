@@ -204,8 +204,8 @@ export const sendContactEmail = async (req, res) => {
 export const profileUpdate = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { name, phone } = req.body;
-    const updates = { name, phone };
+    const { name, phone, gender } = req.body;
+    const updates = { name, phone, gender, profileIsComplete: true };
 
     const updatedUser = await User.findByIdAndUpdate(userId, updates, {
       new: true,
