@@ -38,15 +38,6 @@ const BlogPage = () => {
         "https://images.unsplash.com/photo-1517021897933-0e0319cfbc28?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80", // Placeholder: Person reading/relaxing
       link: "#",
     },
-    // Added a 4th example to show grid wrapping
-    {
-      id: 4,
-      category: "Self-Help",
-      title: "Navigating Life Challenges Through Structured Sessions",
-      image:
-        "https://images.unsplash.com/photo-1499209974431-276138d71629?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      link: "#",
-    },
   ];
 
   return (
