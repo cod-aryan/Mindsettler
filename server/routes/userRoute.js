@@ -1,7 +1,7 @@
 import express from "express";
 import { body } from "express-validator";
-import { userSignup, login, forgotPassword, getMe, logout, sendContactEmail, profileUpdate, sendCorporateEmail } from "../controllers/userController.js";
-import { protect } from "../middlewares/userMiddleware.js";
+import { userSignup, login, forgotPassword, getMe, logout, sendContactEmail, profileUpdate, sendCorporateEmail, sendVerificationLink, verifyEmailToken } from "../controllers/userController.js";
+import { isVerified, protect } from "../middlewares/userMiddleware.js";
 import { validate } from "../middlewares/validationMiddleware.js";
 import { authLimiter } from '../middlewares/rateLimiter.js';
 
@@ -45,7 +45,7 @@ router.post(
 router.get("/logout", authLimiter, protect, logout);
 
 router.get("/me", protect, getMe);
-router.patch("/profile", authLimiter, protect,
+router.patch("/profile", authLimiter, protect, isVerified,
   [
     body("name")
     .isLength({ min: 3, max: 50 })
@@ -61,5 +61,9 @@ router.patch("/profile", authLimiter, protect,
 
 router.post("/contact/send", sendContactEmail);
 router.post("/corporate/send", sendCorporateEmail);
+
+router.post('/auth/send-verification-email', authLimiter, protect, sendVerificationLink);
+
+router.post('/auth/verify-email', authLimiter, protect, verifyEmailToken);
   
 export default router;

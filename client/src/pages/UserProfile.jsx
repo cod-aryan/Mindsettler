@@ -20,8 +20,10 @@ import {
   Video,
   CalendarPlus,
   Menu,
-  ChevronDown,
   ChevronRight,
+  Mail,
+  RefreshCw,
+  CheckCircle,
 } from "lucide-react";
 import Logo from "../assets/icons/MindsettlerLogo-removebg-preview.png";
 import API from "../api/axios";
@@ -31,6 +33,8 @@ import { useAuth } from "../context/AuthContext";
 const UserProfileView = ({ user, setUser }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || "",
     phone: user?.phone || "",
@@ -57,16 +61,121 @@ const UserProfileView = ({ user, setUser }) => {
     }
   };
 
+  // Send verification email
+  const handleSendVerification = async () => {
+    setVerificationLoading(true);
+    try {
+      await API.post("user/auth/send-verification-email");
+      setVerificationSent(true);
+    } catch (err) {
+      alert(
+        err.response?.data?.message ||
+          "Failed to send verification email. Please try again."
+      );
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
+  // Resend verification email
+  const handleResendVerification = async () => {
+    setVerificationLoading(true);
+    setVerificationSent(false);
+    try {
+      await API.post("user/auth/send-verification-email");
+      setVerificationSent(true);
+    } catch (err) {
+      alert(
+        err.response?.data?.message ||
+          "Failed to resend verification email. Please try again."
+      );
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500">
+      
+      {/* Email Verification Alert Banner */}
+      {!user?.isVerified && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-amber-200 shadow-sm animate-in slide-in-from-top duration-500">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-amber-600" />
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <h3 className="text-sm sm:text-base font-bold text-amber-800">
+                Email Not Verified
+              </h3>
+              <p className="text-xs sm:text-sm text-amber-700 mt-1">
+                Please verify your email address to access all features.
+              </p>
+              
+              {verificationSent && (
+                <div className="mt-2 flex items-center gap-2 text-green-600">
+                  <CheckCircle size={14} />
+                  <span className="text-xs font-medium">
+                    Verification email sent! Check your inbox.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+              {!verificationSent ? (
+                <button
+                  onClick={handleSendVerification}
+                  disabled={verificationLoading}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
+                >
+                  {verificationLoading ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Mail size={16} />
+                  )}
+                  {verificationLoading ? "Sending..." : "Verify Email"}
+                </button>
+              ) : (
+                <button
+                  onClick={handleResendVerification}
+                  disabled={verificationLoading}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-white border border-amber-300 text-amber-700 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-amber-50 transition-all disabled:opacity-50"
+                >
+                  {verificationLoading ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <RefreshCw size={16} />
+                  )}
+                  {verificationLoading ? "Sending..." : "Resend Email"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Profile Header Card */}
       <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-          {/* Avatar */}
+          {/* Avatar with verification badge */}
           <div className="relative">
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-50 border-2 border-[#3F2965]/10 flex items-center justify-center text-[#3F2965] text-2xl sm:text-3xl font-bold">
               {formData.name?.charAt(0) || "U"}
             </div>
+            
+            {user?.isVerified ? (
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full border-3 border-white flex items-center justify-center shadow-lg">
+                <CheckCircle size={14} className="text-white" />
+              </div>
+            ) : (
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-amber-500 rounded-full border-3 border-white flex items-center justify-center shadow-lg">
+                <AlertCircle size={14} className="text-white" />
+              </div>
+            )}
           </div>
 
           {/* User Info */}
@@ -77,10 +186,22 @@ const UserProfileView = ({ user, setUser }) => {
             <p className="text-slate-400 text-xs sm:text-sm font-medium break-all">
               {user.email}
             </p>
-            <div className="mt-2 sm:mt-3 flex gap-2 justify-center sm:justify-start">
+            <div className="mt-2 sm:mt-3 flex gap-2 justify-center sm:justify-start flex-wrap">
               <span className="px-3 py-1 bg-pink-50 text-[#Dd1764] text-[10px] font-bold uppercase rounded-full tracking-wider">
                 Member
               </span>
+              
+              {user?.isVerified ? (
+                <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-full tracking-wider flex items-center gap-1">
+                  <CheckCircle size={10} />
+                  Verified
+                </span>
+              ) : (
+                <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-bold uppercase rounded-full tracking-wider flex items-center gap-1">
+                  <AlertCircle size={10} />
+                  Unverified
+                </span>
+              )}
             </div>
           </div>
 
@@ -96,90 +217,114 @@ const UserProfileView = ({ user, setUser }) => {
 
       {/* Profile Form Card */}
       <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
-<form
-  onSubmit={handleUpdate}
-  className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
->
-  <div className="space-y-1">
-    <label className="text-xs font-bold text-slate-400 ml-1">
-      Full Name
-    </label>
-    <input
-      disabled={!isEditing}
-      value={formData.name}
-      onChange={(e) =>
-        setFormData({ ...formData, name: e.target.value })
-      }
-      className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
-    />
-  </div>
-  
-  <div className="space-y-1">
-    <label className="text-xs font-bold text-slate-400 ml-1">
-      Email Address
-    </label>
-    <input
-      disabled
-      value={user.email}
-      className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base opacity-60 cursor-not-allowed truncate"
-    />
-  </div>
-  
-  <div className="space-y-1">
-    <label className="text-xs font-bold text-slate-400 ml-1">
-      Phone Number
-    </label>
-    <input
-      disabled={!isEditing}
-      value={formData.phone}
-      onChange={(e) =>
-        setFormData({ ...formData, phone: e.target.value })
-      }
-      className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
-    />
-  </div>
-  
-  <div className="space-y-1">
-    <label className="text-xs font-bold text-slate-400 ml-1">
-      Gender
-    </label>
-    <select
-      disabled={!isEditing}
-      value={formData.gender}
-      onChange={(e) =>
-        setFormData({ ...formData, gender: e.target.value })
-      }
-      className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all cursor-pointer appearance-none"
-      style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'right 12px center',
-        backgroundSize: '20px',
-        paddingRight: '40px'
-      }}
-    >
-      <option value="">Select Gender</option>
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-      <option value="Other">Other</option>
-    </select>
-  </div>
-  
-  {isEditing && (
-    <button
-      type="submit"
-      disabled={loading}
-      className="md:col-span-2 w-full py-3 bg-[#3F2965] text-white rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg hover:opacity-90 transition-all"
-    >
-      {loading ? (
-        <Loader2 className="animate-spin" size={18} />
-      ) : (
-        <Save size={18} />
-      )}
-      Save Changes
-    </button>
-  )}
-</form>
+        <form
+          onSubmit={handleUpdate}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
+        >
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 ml-1">
+              Full Name
+            </label>
+            <input
+              disabled={!isEditing}
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 ml-1 flex items-center gap-2">
+              Email Address
+              {user?.isVerified ? (
+                <span className="text-green-500 flex items-center gap-1">
+                  <CheckCircle size={12} />
+                  <span className="text-[10px]">Verified</span>
+                </span>
+              ) : (
+                <span className="text-amber-500 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  <span className="text-[10px]">Not Verified</span>
+                </span>
+              )}
+            </label>
+            <div className="relative">
+              <input
+                disabled
+                value={user.email}
+                className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base opacity-60 cursor-not-allowed truncate pr-10"
+              />
+              {user?.isVerified ? (
+                <CheckCircle 
+                  size={18} 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" 
+                />
+              ) : (
+                <AlertCircle 
+                  size={18} 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500" 
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 ml-1">
+              Phone Number
+            </label>
+            <input
+              disabled={!isEditing}
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
+              className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 ml-1">
+              Gender
+            </label>
+            <select
+              disabled={!isEditing}
+              value={formData.gender}
+              onChange={(e) =>
+                setFormData({ ...formData, gender: e.target.value })
+              }
+              className="w-full p-3 bg-slate-50 border-none rounded-xl font-medium text-sm sm:text-base focus:ring-1 focus:ring-[#3F2965] disabled:opacity-60 transition-all cursor-pointer appearance-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 12px center",
+                backgroundSize: "20px",
+                paddingRight: "40px",
+              }}
+            >
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          {isEditing && (
+            <button
+              type="submit"
+              disabled={loading}
+              className="md:col-span-2 w-full py-3 bg-[#3F2965] text-white rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg hover:opacity-90 transition-all"
+            >
+              {loading ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <Save size={18} />
+              )}
+              Save Changes
+            </button>
+          )}
+        </form>
       </div>
     </div>
   );

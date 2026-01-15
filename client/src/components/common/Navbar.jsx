@@ -52,10 +52,10 @@ const Navbar = () => {
   const baseLinks = [
     { name: "Home", href: "/" },
     { name: "Booking", href: "/booking" },
+    {name: "About Us", href:"/aboutus"},
     { name: "Resources", href: "/resources" },
     { name: "Corporate Services", href: "/corporate" },
     { name: "Contact", href: "/contact" },
-    {name: "About Us", href:"/aboutus"}
   ];
 
   const navLinks = [...baseLinks];
@@ -84,7 +84,7 @@ const Navbar = () => {
             <img
               src={logo}
               alt="MindSettler Logo"
-              className={`h-8 sm:h-10 w-auto object-contain transition-all duration-500 
+              className={`h-11 w-auto object-contain transition-all duration-500 
                           ${isScrolled || isMobileMenuOpen ? "brightness-100" : "brightness-125"}`}
             />
           </Link>

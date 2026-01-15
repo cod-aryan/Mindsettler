@@ -9,13 +9,14 @@ import {
 import { admin } from "../middlewares/adminMiddleware.js";
 import { body } from "express-validator";
 import { validate } from "../middlewares/validationMiddleware.js";
+import { isProfileComplete } from "../middlewares/userMiddleware.js";
 
 const router = express.Router();
 
 router.get("/", admin, getPendingTransactions);
-router.get("/user-wallet-transactions", getUserTransactions);
+router.get("/user-wallet-transactions", isProfileComplete, getUserTransactions);
 router.post(
-  "/create-transaction",
+  "/create-transaction", isProfileComplete,
   [
     body("transactionId")
       .isLength({ min: 12, max: 12 })

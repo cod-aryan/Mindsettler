@@ -38,10 +38,6 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'], 
         default: 'user' 
     },
-    hasAcceptedPolicy: { 
-        type: Boolean, 
-        default: false 
-    },
     journeyStatus: {
         type: String,
         enum: ['Discovery', 'Awareness', 'Healing', 'Growth'],
@@ -53,6 +49,10 @@ const userSchema = new mongoose.Schema({
         min: 0
     },
     profileIsComplete: { 
+        type: Boolean, 
+        default: false 
+    },
+    isVerified: { 
         type: Boolean, 
         default: false 
     }

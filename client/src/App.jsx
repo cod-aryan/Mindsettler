@@ -13,11 +13,12 @@ import UserProfile from "./pages/UserProfile.jsx";
 import ChatWidget from "./components/chatbot/ChatWidget.jsx";
 import AboutUsPage from "./pages/aboutUs.jsx";
 import ResourcesPage from "./pages/Resources.jsx";
+import VerifyEmail from "./components/auth/VerifyEmail.jsx";
 
 // A small component to wrap public pages with the Navbar
 
 function App() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   return (
     <BrowserRouter>
       <ScrollToTop />
@@ -25,14 +26,15 @@ function App() {
       <Routes>
         {/* GROUP 1: Public Pages (With Navbar) */}
         <Route path="/" element={<Home />} />
-        <Route path="/booking" element={<BookingPage/>}/>
+        <Route path="/booking" element={<BookingPage />} />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/corporate" element={<CorporateServices/>}/>
+        <Route path="/corporate" element={<CorporateServices />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/aboutus" element={<AboutUsPage/>}/>
-        <Route path="/resources" element={<ResourcesPage/>}/>
+        <Route path="/aboutus" element={<AboutUsPage />} />
+        <Route path="/resources" element={<ResourcesPage />} />
+        <Route path="/verify-email" element={<VerifyEmail user={user} setUser={setUser} />}/>
         {/* GROUP 2: Admin Pages (No Public Navbar) */}
         {/* Your AdminDashboard has its own Sidebar, so it doesn't need a wrapper */}
         <Route path="/admin" element={<AdminDashboard />} />
