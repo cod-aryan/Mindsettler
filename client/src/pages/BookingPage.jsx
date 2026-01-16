@@ -1835,7 +1835,7 @@ const [pageLoaded, setPageLoaded] = useState(false);
                               animate={{ scale: [1, 1.1, 1] }}
                               transition={{ duration: 2, repeat: Infinity }}
                             >
-                              <CalendarIcon size={18} className="text-[#DD1764]" />
+                              
                             </motion.div>
                           </motion.div>
                           

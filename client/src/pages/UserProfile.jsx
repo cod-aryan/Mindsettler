@@ -709,10 +709,7 @@ const MyBookingsView = () => {
               <p className="text-3xl font-black">{sessions.length}</p>
               <p className="text-purple-200 text-xs font-bold uppercase">Total</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/10">
-              <p className="text-3xl font-black">{sessions.filter(s => s.status === "confirmed").length}</p>
-              <p className="text-purple-200 text-xs font-bold uppercase">Upcoming</p>
-            </div>
+            
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/10">
               <p className="text-3xl font-black">{sessions.filter(s => s.status === "completed").length}</p>
               <p className="text-purple-200 text-xs font-bold uppercase">Completed</p>
@@ -727,7 +724,7 @@ const MyBookingsView = () => {
 
       {/* Filter Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {["all", "confirmed", "pending", "completed", "rejected"].map((filter) => (
+        {["all", "confirmed", "completed", "rejected"].map((filter) => (
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
