@@ -23,16 +23,16 @@ import {
   ChevronRight,
   Sparkles,
   Shield,
-  TrendingUp,
   Heart,
-  Star,
-  Zap,
   ArrowRight,
-  Bell,
   Edit3,
   Phone,
   Mail,
   UserCheck,
+  IndianRupee,
+  QrCode,
+  Smartphone,
+  Check
 } from "lucide-react";
 import Logo from "../assets/icons/MindsettlerLogo-removebg-preview.png";
 import API from "../api/axios";
@@ -288,6 +288,27 @@ const WalletView = ({ user }) => {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [formData, setFormData] = useState({ amount: "", transactionId: "" });
+  const [copied, setCopied] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1); // 1: Payment, 2: Verify
+
+  // Your UPI Details - Update these with actual values
+  const upiDetails = {
+    upiId: "mindsettler@paytm", // Replace with your actual UPI ID
+    name: "MindSettler Wellness",
+    merchantCode: "MINDSETTLER",
+  };
+
+  // Generate QR Code URL (using a QR code API)
+  const generateQRCodeURL = (amount) => {
+    const upiString = `upi://pay?pa=${upiDetails.upiId}&pn=${encodeURIComponent(
+      upiDetails.name
+    )}&am=${amount || ""}&cu=INR&tn=${encodeURIComponent("Wallet Topup")}`;
+    
+    // Using QR Server API (free)
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+      upiString
+    )}`;
+  };
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -303,6 +324,16 @@ const WalletView = ({ user }) => {
     fetchHistory();
   }, []);
 
+  const handleCopyUPI = async () => {
+    try {
+      await navigator.clipboard.writeText(upiDetails.upiId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
   const handleTopup = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -315,6 +346,7 @@ const WalletView = ({ user }) => {
       alert("Request Sent! Pending admin approval.");
       setShowPopup(false);
       setFormData({ amount: "", transactionId: "" });
+      setCurrentStep(1);
       const res = await API.get("/transactions/user-wallet-transactions");
       setTransactions(res.data.data || []);
     } catch (err) {
@@ -326,6 +358,12 @@ const WalletView = ({ user }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+    setCurrentStep(1);
+    setFormData({ amount: "", transactionId: "" });
   };
 
   const getStatusStyles = (status) => {
@@ -341,6 +379,9 @@ const WalletView = ({ user }) => {
     }
   };
 
+  // Quick amount buttons
+  const quickAmounts = [500, 1000, 2000, 5000];
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Balance Card - Enhanced */}
@@ -349,7 +390,7 @@ const WalletView = ({ user }) => {
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-60 h-60 bg-[#Dd1764]/20 rounded-full translate-y-1/2 -translate-x-1/2" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-transparent via-white/5 to-transparent rotate-45" />
-        
+
         {/* Card Icon */}
         <div className="absolute top-6 right-6 opacity-20">
           <CreditCard size={80} />
@@ -362,7 +403,7 @@ const WalletView = ({ user }) => {
               Total Balance
             </p>
           </div>
-          
+
           <div className="flex items-baseline gap-2 mb-2">
             <span className="text-purple-300 text-2xl">₹</span>
             <h2 className="text-5xl sm:text-6xl font-black tracking-tight">
@@ -370,7 +411,7 @@ const WalletView = ({ user }) => {
             </h2>
             <span className="text-purple-300 text-lg">.00</span>
           </div>
-          
+
           <p className="text-purple-300 text-sm mb-8">Available for sessions</p>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -378,10 +419,12 @@ const WalletView = ({ user }) => {
               onClick={() => setShowPopup(true)}
               className="flex-1 sm:flex-none px-8 py-4 bg-[#Dd1764] text-white rounded-2xl font-black text-sm shadow-lg hover:bg-[#c41458] hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 group"
             >
-              <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" /> 
+              <Plus
+                size={18}
+                className="group-hover:rotate-90 transition-transform duration-300"
+              />
               Add Money
             </button>
-          
           </div>
         </div>
 
@@ -395,8 +438,6 @@ const WalletView = ({ user }) => {
         </div>
       </div>
 
-  
-
       {/* Transaction History */}
       <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-100/50 shadow-lg overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
@@ -406,12 +447,13 @@ const WalletView = ({ user }) => {
             </div>
             <div>
               <h3 className="font-black text-[#3F2965]">Transaction History</h3>
-              <p className="text-xs text-slate-400">{transactions.length} transactions</p>
+              <p className="text-xs text-slate-400">
+                {transactions.length} transactions
+              </p>
             </div>
           </div>
-         
         </div>
-        
+
         <div className="divide-y divide-slate-50">
           {historyLoading ? (
             <div className="p-16 flex flex-col items-center justify-center">
@@ -424,14 +466,16 @@ const WalletView = ({ user }) => {
                 <Wallet size={32} className="text-slate-300" />
               </div>
               <p className="text-slate-500 font-bold mb-2">No transactions yet</p>
-              <p className="text-slate-400 text-sm">Your transaction history will appear here</p>
+              <p className="text-slate-400 text-sm">
+                Your transaction history will appear here
+              </p>
             </div>
           ) : (
             transactions.map((txn, index) => {
               const isRejected = txn.status?.toLowerCase() === "rejected";
               const isPending = txn.status?.toLowerCase() === "pending";
               const isCredit = txn.type === "credit";
-              
+
               return (
                 <div
                   key={txn._id}
@@ -439,15 +483,26 @@ const WalletView = ({ user }) => {
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   {/* Transaction Icon */}
-                  <div className={`p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 ${
-                    isRejected ? "bg-red-100" :
-                    isPending ? "bg-amber-100" :
-                    isCredit ? "bg-green-100" : "bg-pink-100"
-                  }`}>
-                    {isRejected ? <X size={20} className="text-red-600" /> :
-                     isPending ? <Clock size={20} className="text-amber-600" /> :
-                     isCredit ? <ArrowDownLeft size={20} className="text-green-600" /> :
-                     <CalendarCheck size={20} className="text-[#Dd1764]" />}
+                  <div
+                    className={`p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 ${
+                      isRejected
+                        ? "bg-red-100"
+                        : isPending
+                        ? "bg-amber-100"
+                        : isCredit
+                        ? "bg-green-100"
+                        : "bg-pink-100"
+                    }`}
+                  >
+                    {isRejected ? (
+                      <X size={20} className="text-red-600" />
+                    ) : isPending ? (
+                      <Clock size={20} className="text-amber-600" />
+                    ) : isCredit ? (
+                      <ArrowDownLeft size={20} className="text-green-600" />
+                    ) : (
+                      <CalendarCheck size={20} className="text-[#Dd1764]" />
+                    )}
                   </div>
 
                   {/* Transaction Details */}
@@ -456,7 +511,11 @@ const WalletView = ({ user }) => {
                       <p className="font-bold text-[#3F2965] truncate">
                         {isCredit ? "Wallet Deposit" : "Session Payment"}
                       </p>
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${getStatusStyles(txn.status)}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${getStatusStyles(
+                          txn.status
+                        )}`}
+                      >
                         {txn.status}
                       </span>
                     </div>
@@ -478,12 +537,19 @@ const WalletView = ({ user }) => {
 
                   {/* Amount */}
                   <div className="text-right">
-                    <p className={`text-lg font-black ${
-                      isRejected ? "text-slate-400 line-through" :
-                      isPending ? "text-amber-500" :
-                      isCredit ? "text-green-600" : "text-[#3F2965]"
-                    }`}>
-                      {isRejected || isPending ? "" : (isCredit ? "+" : "-")}₹{txn.amount}
+                    <p
+                      className={`text-lg font-black ${
+                        isRejected
+                          ? "text-slate-400 line-through"
+                          : isPending
+                          ? "text-amber-500"
+                          : isCredit
+                          ? "text-green-600"
+                          : "text-[#3F2965]"
+                      }`}
+                    >
+                      {isRejected || isPending ? "" : isCredit ? "+" : "-"}₹
+                      {txn.amount}
                     </p>
                     <p className="text-[9px] font-mono text-slate-300 hidden sm:block">
                       {txn.transactionId}
@@ -496,17 +562,20 @@ const WalletView = ({ user }) => {
         </div>
       </div>
 
-      {/* Top-up Popup - Enhanced */}
+      {/* Top-up Popup with UPI & QR Options */}
       {showPopup && (
-        <div className="fixed inset-0 bg-[#3F2965]/60 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div 
-            className="bg-white w-full sm:max-w-md rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+        <div
+          className="fixed inset-0 bg-[#3F2965]/60 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={handleClosePopup}
+        >
+          <div
+            className="bg-white w-full sm:max-w-lg rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="relative bg-gradient-to-r from-[#3F2965] to-[#5a3e8c] p-6 text-white">
               <button
-                onClick={() => setShowPopup(false)}
+                onClick={handleClosePopup}
                 className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors"
               >
                 <X size={20} />
@@ -517,74 +586,322 @@ const WalletView = ({ user }) => {
                 </div>
                 <div>
                   <h3 className="font-black text-xl">Add Money</h3>
-                  <p className="text-purple-200 text-sm">Top up your wallet</p>
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={handleTopup} className="p-6 space-y-5">
-              {/* Info Banner */}
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-2xl flex gap-3 items-start border border-amber-100">
-                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                  <AlertCircle size={16} className="text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-amber-800 text-xs font-bold mb-1">How to add money</p>
-                  <p className="text-amber-700 text-[11px] leading-relaxed">
-                    Transfer to our UPI ID first, then enter the 12-digit UTR/Transaction ID below for verification.
+                  <p className="text-purple-200 text-sm">
+                    Step {currentStep} of 2
                   </p>
                 </div>
               </div>
 
-              {/* Amount Input */}
-              <div>
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-2">
-                  <CreditCard size={12} /> Amount
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                  <input
-                    type="number"
-                    required
-                    placeholder="0.00"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    className="w-full pl-8 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold text-lg focus:border-[#3F2965] focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Transaction ID Input */}
-              <div>
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-2">
-                  <Hash size={12} /> UTR / Transaction ID
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Enter 12-digit UTR number"
-                  value={formData.transactionId}
-                  onChange={(e) => setFormData({ ...formData, transactionId: e.target.value })}
-                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold text-sm focus:border-[#3F2965] focus:bg-white transition-all font-mono"
+              {/* Progress Bar */}
+              <div className="flex gap-2 mt-4">
+                <div
+                  className={`flex-1 h-1 rounded-full ${
+                    currentStep >= 1 ? "bg-[#Dd1764]" : "bg-white/20"
+                  }`}
+                />
+                <div
+                  className={`flex-1 h-1 rounded-full ${
+                    currentStep >= 2 ? "bg-[#Dd1764]" : "bg-white/20"
+                  }`}
                 />
               </div>
+            </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-[#3F2965] to-[#5a3e8c] text-white rounded-xl font-black flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl transition-all duration-300 group disabled:opacity-50"
-              >
-                {loading ? (
-                  <Loader2 className="animate-spin" size={20} />
-                ) : (
-                  <>
-                    Submit Request
-                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
-            </form>
+            {/* Step 1: Payment Options */}
+            {currentStep === 1 && (
+              <div className="p-6 space-y-5">
+                {/* Amount Input */}
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-2">
+                    <IndianRupee size={12} /> Enter Amount
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      required
+                      placeholder="0"
+                      value={formData.amount}
+                      onChange={(e) =>
+                        setFormData({ ...formData, amount: e.target.value })
+                      }
+                      className="w-full pl-10 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-2xl focus:border-[#3F2965] focus:bg-white transition-all text-center"
+                    />
+                  </div>
+
+                  {/* Quick Amount Buttons */}
+                  <div className="flex gap-2 mt-3">
+                    {quickAmounts.map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, amount: amt.toString() })
+                        }
+                        className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
+                          formData.amount === amt.toString()
+                            ? "bg-[#3F2965] text-white"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        ₹{amt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-slate-200" />
+                  <span className="text-xs font-bold text-slate-400">
+                    PAY USING
+                  </span>
+                  <div className="flex-1 h-px bg-slate-200" />
+                </div>
+
+                {/* QR Code Section */}
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-5 border border-slate-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <QrCode size={18} className="text-[#3F2965]" />
+                    <span className="font-bold text-[#3F2965]">
+                      Scan QR Code
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col items-center">
+                    {/* QR Code */}
+                    <div className="bg-white p-3 rounded-2xl shadow-lg mb-4">
+                      {formData.amount ? (
+                        <img
+                          src={generateQRCodeURL(formData.amount)}
+                          alt="Payment QR Code"
+                          className="w-44 h-44 rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-44 h-44 bg-slate-100 rounded-lg flex items-center justify-center">
+                          <div className="text-center">
+                            <QrCode
+                              size={40}
+                              className="text-slate-300 mx-auto mb-2"
+                            />
+                            <p className="text-xs text-slate-400">
+                              Enter amount
+                              <br />
+                              to generate QR
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {formData.amount && (
+                      <p className="text-sm text-slate-500 mb-2">
+                        Scan & pay{" "}
+                        <span className="font-bold text-[#3F2965]">
+                          ₹{formData.amount}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* OR Divider */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-slate-200" />
+                  <span className="text-xs font-bold text-slate-400">OR</span>
+                  <div className="flex-1 h-px bg-slate-200" />
+                </div>
+
+                {/* UPI ID Section */}
+                <div className="bg-gradient-to-br from-[#3F2965]/5 to-[#Dd1764]/5 rounded-2xl p-5 border border-[#3F2965]/10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Smartphone size={18} className="text-[#Dd1764]" />
+                    <span className="font-bold text-[#3F2965]">
+                      Pay via UPI ID
+                    </span>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-4 flex items-center justify-between border border-slate-200">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">
+                        UPI ID
+                      </p>
+                      <p className="font-mono font-bold text-[#3F2965] text-lg">
+                        {upiDetails.upiId}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleCopyUPI}
+                      className={`p-3 rounded-xl transition-all ${
+                        copied
+                          ? "bg-green-100 text-green-600"
+                          : "bg-slate-100 text-slate-600 hover:bg-[#3F2965] hover:text-white"
+                      }`}
+                    >
+                      {copied ? <Check size={20} /> : <Copy size={20} />}
+                    </button>
+                  </div>
+
+                  {copied && (
+                    <p className="text-green-600 text-xs font-bold mt-2 text-center">
+                      ✓ UPI ID copied to clipboard!
+                    </p>
+                  )}
+                </div>
+
+                {/* Info Note */}
+                <div className="bg-amber-50 p-4 rounded-xl flex gap-3 items-start border border-amber-100">
+                  <AlertCircle
+                    size={18}
+                    className="text-amber-500 shrink-0 mt-0.5"
+                  />
+                  <p className="text-amber-700 text-xs leading-relaxed">
+                    After completing payment, click "I've Made Payment" and
+                    enter your 12-digit UTR/Transaction ID for verification.
+                  </p>
+                </div>
+
+                {/* Continue Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!formData.amount) {
+                      alert("Please enter amount first");
+                      return;
+                    }
+                    setCurrentStep(2);
+                  }}
+                  disabled={!formData.amount}
+                  className="w-full py-4 bg-gradient-to-r from-[#3F2965] to-[#Dd1764] text-white rounded-xl font-black flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+                >
+                  I've Made Payment
+                  <ChevronRight
+                    size={18}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: Verify Transaction */}
+            {currentStep === 2 && (
+              <form onSubmit={handleTopup} className="p-6 space-y-5">
+                {/* Payment Summary */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 border border-green-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                      <Check size={16} className="text-green-600" />
+                    </div>
+                    <span className="font-bold text-green-700">
+                      Payment Made
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 text-sm">Amount Paid</span>
+                    <span className="font-black text-2xl text-[#3F2965]">
+                      ₹{formData.amount}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Transaction ID Input */}
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-2">
+                    <Hash size={12} /> UTR / Transaction ID
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter 12-digit UTR number"
+                    value={formData.transactionId}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        transactionId: e.target.value,
+                      })
+                    }
+                    className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold text-lg focus:border-[#3F2965] focus:bg-white transition-all font-mono tracking-wider text-center"
+                    maxLength={20}
+                  />
+                  <p className="text-[10px] text-slate-400 mt-2 text-center">
+                    You can find the UTR/Reference ID in your payment app's
+                    transaction history
+                  </p>
+                </div>
+
+                {/* Where to find UTR */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                  <p className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
+                    <AlertCircle size={14} className="text-[#Dd1764]" />
+                    Where to find UTR?
+                  </p>
+                  <div className="space-y-2 text-xs text-slate-500">
+                    <p className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                        1
+                      </span>
+                      Open your UPI app (GPay, PhonePe, Paytm)
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                        2
+                      </span>
+                      Go to Transaction History
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                        3
+                      </span>
+                      Click on the payment you just made
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                        4
+                      </span>
+                      Copy the UTR/UPI Ref. No./Transaction ID
+                    </p>
+                  </div>
+                </div>
+
+                {/* Security Note */}
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <Shield size={14} className="text-green-500" />
+                  <span>
+                    Your transaction details are securely encrypted
+                  </span>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || !formData.transactionId}
+                    className="flex-[2] py-4 bg-gradient-to-r from-[#3F2965] to-[#Dd1764] text-white rounded-xl font-black flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    {loading ? (
+                      <Loader2 className="animate-spin" size={20} />
+                    ) : (
+                      <>
+                        Verify & Submit
+                        <ArrowRight
+                          size={16}
+                          className="group-hover:translate-x-1 transition-transform"
+                        />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
 
             {/* Safe area padding */}
             <div className="h-6 sm:h-0" />
