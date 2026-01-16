@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useInView, useAnimation } from "framer-motion";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -19,6 +20,12 @@ import {
   ChevronRight,
   Shield,
   Banknote,
+  Star,
+  Heart,
+  Zap,
+  Coffee,
+  ChevronDown,
+  ArrowUpRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/common/Navbar";
@@ -27,242 +34,358 @@ import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { IsLoginUser, IsVerifiedUser, IsProfileCompleteUser } from "../components/auth/Verification";
 
-// ==================== ANIMATION STYLES ====================
-const animationStyles = `
-  /* Custom Scrollbar */
-  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { 
-    background: linear-gradient(180deg, #3F2965, #Dd1764); 
-    border-radius: 10px; 
-  }
-  .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+// ==================== CUSTOM HOOKS ====================
 
-  /* Keyframes */
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+// Custom Hook for Mouse Position
+const useMousePosition = () => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  @keyframes fadeInDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  useEffect(() => {
+    const updateMousePosition = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", updateMousePosition);
+    return () => window.removeEventListener("mousemove", updateMousePosition);
+  }, []);
 
-  @keyframes fadeInLeft {
-    from { opacity: 0; transform: translateX(-30px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
+  return mousePosition;
+};
 
-  @keyframes fadeInRight {
-    from { opacity: 0; transform: translateX(30px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
+// Custom Hook for Intersection Observer
+const useOnScreen = (ref, threshold = 0.1) => {
+  const [isIntersecting, setIntersecting] = useState(false);
 
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-  }
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setIntersecting(entry.isIntersecting),
+      { threshold }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [ref, threshold]);
 
-  @keyframes pulse-ring {
-    0% { transform: scale(0.8); opacity: 1; }
-    100% { transform: scale(1.5); opacity: 0; }
-  }
+  return isIntersecting;
+};
 
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
+// ==================== ANIMATION COMPONENTS ====================
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-  }
+// Custom Cursor Component
+const CustomCursor = () => {
+  const mousePosition = useMousePosition();
+  const [isHovering, setIsHovering] = useState(false);
+  const [isClicking, setIsClicking] = useState(false);
+  const cursorX = useSpring(mousePosition.x, { stiffness: 500, damping: 28 });
+  const cursorY = useSpring(mousePosition.y, { stiffness: 500, damping: 28 });
 
-  @keyframes slideInModal {
-    from { opacity: 0; transform: scale(0.95) translateY(10px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
-  }
+  useEffect(() => {
+    const handleMouseOver = (e) => {
+      if (e.target.closest('button, a, input, textarea, [data-hover], .hover-target')) {
+        setIsHovering(true);
+      } else {
+        setIsHovering(false);
+      }
+    };
+    
+    const handleMouseDown = () => setIsClicking(true);
+    const handleMouseUp = () => setIsClicking(false);
 
-  @keyframes successPop {
-    0% { transform: scale(0); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-  }
+    window.addEventListener("mouseover", handleMouseOver);
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mouseup", handleMouseUp);
+    
+    return () => {
+      window.removeEventListener("mouseover", handleMouseOver);
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
 
-  @keyframes checkDraw {
-    to { stroke-dashoffset: 0; }
-  }
+  return (
+    <>
+      <motion.div
+        className="fixed w-4 h-4 bg-[#DD1764] rounded-full pointer-events-none z-[9999] mix-blend-difference hidden lg:block"
+        style={{
+          x: cursorX,
+          y: cursorY,
+          translateX: "-50%",
+          translateY: "-50%",
+        }}
+        animate={{
+          scale: isClicking ? 0.5 : isHovering ? 2.5 : 1,
+          opacity: isHovering ? 0.5 : 1,
+        }}
+        transition={{ duration: 0.2 }}
+      />
+      <motion.div
+        className="fixed w-10 h-10 border-2 border-[#3F2965] rounded-full pointer-events-none z-[9999] mix-blend-difference hidden lg:block"
+        style={{
+          x: cursorX,
+          y: cursorY,
+          translateX: "-50%",
+          translateY: "-50%",
+        }}
+        animate={{
+          scale: isClicking ? 1.8 : isHovering ? 1.5 : 1,
+          opacity: isClicking ? 0.3 : isHovering ? 0 : 1,
+        }}
+        transition={{ duration: 0.2 }}
+      />
+    </>
+  );
+};
 
-  @keyframes ripple {
-    to { transform: scale(4); opacity: 0; }
-  }
+// Scroll Progress Bar
+const ScrollProgressBar = () => {
+  const [progress, setProgress] = useState(0);
 
-  @keyframes bounce-subtle {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-  }
+  useEffect(() => {
+    const updateProgress = () => {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrolled = window.scrollY;
+      setProgress(scrolled / scrollHeight);
+    };
+    window.addEventListener("scroll", updateProgress);
+    return () => window.removeEventListener("scroll", updateProgress);
+  }, []);
 
-  @keyframes glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(221, 23, 100, 0.3); }
-    50% { box-shadow: 0 0 40px rgba(221, 23, 100, 0.5); }
-  }
-
-  /* Animation Classes */
-  .animate-fade-in-up {
-    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    opacity: 0;
-  }
-
-  .animate-fade-in-down {
-    animation: fadeInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    opacity: 0;
-  }
-
-  .animate-fade-in-left {
-    animation: fadeInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    opacity: 0;
-  }
-
-  .animate-fade-in-right {
-    animation: fadeInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    opacity: 0;
-  }
-
-  .animate-scale-in {
-    animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .animate-modal-in {
-    animation: slideInModal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .animate-success-pop {
-    animation: successPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .animate-bounce-subtle {
-    animation: bounce-subtle 2s ease-in-out infinite;
-  }
-
-  .animate-glow {
-    animation: glow 2s ease-in-out infinite;
-  }
-
-  /* Skeleton Loading */
-  .skeleton {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  /* Stagger Delays */
-  .delay-100 { animation-delay: 0.1s; }
-  .delay-200 { animation-delay: 0.2s; }
-  .delay-300 { animation-delay: 0.3s; }
-  .delay-400 { animation-delay: 0.4s; }
-  .delay-500 { animation-delay: 0.5s; }
-  .delay-600 { animation-delay: 0.6s; }
-  .delay-700 { animation-delay: 0.7s; }
-
-  /* Hover Effects */
-  .hover-lift {
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px -12px rgba(63, 41, 101, 0.25);
-  }
-
-  .hover-scale {
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .hover-scale:hover {
-    transform: scale(1.02);
-  }
-  .hover-scale:active {
-    transform: scale(0.98);
-  }
-
-  /* Ripple Effect */
-  .ripple-container {
-    position: relative;
-    overflow: hidden;
-  }
-  .ripple-container .ripple {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.4);
-    transform: scale(0);
-    pointer-events: none;
-  }
-  .ripple-container .ripple.active {
-    animation: ripple 0.6s linear;
-  }
-
-  /* Glass Effect */
-  .glass {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
-
-  /* Gradient Text - Updated to white/pink/light purple blend */
-  .gradient-text {
-    background: linear-gradient(135deg, #E9D5FF, #FBCFE8, #F9A8D4, #DDD6FE);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Alternative gradient text with more white */
-  .gradient-text-soft {
-    background: linear-gradient(135deg, #FDFCFF, #F3E8FF, #FCE7F3, #FAE8FF);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 2px 10px rgba(219, 39, 119, 0.2);
-  }
-
-  /* Progress Bar */
-  .progress-fill {
-    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  /* Progress Stepper Gradient */
-  .stepper-gradient {
-    background: linear-gradient(135deg, #FAE8FF, #FBCFE8, #F3E8FF);
-  }
-
-  .stepper-gradient-active {
-    background: linear-gradient(135deg, #E9D5FF, #FBCFE8, #F9A8D4);
-  }
-`;
-
-// ==================== COMPONENTS ====================
-
-// Animated Background Shapes
-const FloatingShapes = () => (
-  <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-    <div
-      className="absolute top-20 left-10 w-72 h-72 bg-purple-100/40 rounded-full blur-3xl animate-float"
-      style={{ animationDelay: "0s" }}
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3F2965] via-[#DD1764] to-[#3F2965] z-[9999] origin-left"
+      style={{ scaleX: progress }}
     />
-    <div
-      className="absolute top-40 right-20 w-96 h-96 bg-pink-100/30 rounded-full blur-3xl animate-float"
-      style={{ animationDelay: "1s" }}
-    />
-    <div
-      className="absolute bottom-20 left-1/3 w-64 h-64 bg-purple-50/50 rounded-full blur-3xl animate-float"
-      style={{ animationDelay: "2s" }}
-    />
-  </div>
-);
+  );
+};
 
-// Progress Stepper - Updated with white/pink/light purple blend
+// Magnetic Button Component
+const MagneticButton = ({ children, className, onClick, disabled, type = "button", ...props }) => {
+  const ref = useRef(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouse = (e) => {
+    if (disabled) return;
+    const { clientX, clientY } = e;
+    const { height, width, left, top } = ref.current.getBoundingClientRect();
+    const middleX = clientX - (left + width / 2);
+    const middleY = clientY - (top + height / 2);
+    setPosition({ x: middleX * 0.15, y: middleY * 0.15 });
+  };
+
+  const reset = () => setPosition({ x: 0, y: 0 });
+
+  return (
+    <motion.button
+      ref={ref}
+      type={type}
+      onMouseMove={handleMouse}
+      onMouseLeave={reset}
+      onClick={onClick}
+      disabled={disabled}
+      animate={{ x: position.x, y: position.y }}
+      transition={{ type: "spring", stiffness: 350, damping: 15, mass: 0.5 }}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.button>
+  );
+};
+
+// Text Reveal Animation Component
+const TextReveal = ({ children, delay = 0, className = "" }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+
+  return (
+    <div ref={ref} className={`overflow-hidden ${className}`}>
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={isInView ? { y: 0 } : { y: "100%" }}
+        transition={{
+          duration: 0.8,
+          ease: [0.33, 1, 0.68, 1],
+          delay,
+        }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+};
+
+// Staggered Text Animation
+const StaggerText = ({ text, className, delay = 0 }) => {
+  const words = text.split(" ");
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  
+  const container = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05, delayChildren: delay },
+    },
+  };
+
+  const child = {
+    hidden: { opacity: 0, y: 20, rotateX: 90 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      rotateX: 0,
+      transition: {
+        type: "spring",
+        damping: 12,
+        stiffness: 100,
+      },
+    },
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      variants={container}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+    >
+      {words.map((word, index) => (
+        <motion.span key={index} variants={child} className="inline-block mr-2">
+          {word}
+        </motion.span>
+      ))}
+    </motion.div>
+  );
+};
+
+// Glowing Card with Mouse Track
+const GlowingCard = ({ children, className, color = "purple" }) => {
+  const ref = useRef(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const handleMouseMove = useCallback(
+    (e) => {
+      const rect = ref.current?.getBoundingClientRect();
+      if (rect) {
+        mouseX.set(e.clientX - rect.left);
+        mouseY.set(e.clientY - rect.top);
+      }
+    },
+    [mouseX, mouseY]
+  );
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      className={`relative ${className}`}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 group-hover:opacity-100 transition duration-300"
+        style={{
+          background: useTransform(
+            [mouseX, mouseY],
+            ([x, y]) =>
+              `radial-gradient(400px circle at ${x}px ${y}px, ${
+                color === "pink" ? "rgba(221,23,100,0.15)" : "rgba(63,41,101,0.15)"
+              }, transparent 40%)`
+          ),
+        }}
+      />
+      {children}
+    </motion.div>
+  );
+};
+
+// Enhanced Floating Shapes with Parallax
+const FloatingShapes = () => {
+  const mousePosition = useMousePosition();
+  
+  const shapes = useMemo(() => [
+    { size: 300, x: "5%", y: "10%", color: "purple", delay: 0 },
+    { size: 400, x: "80%", y: "5%", color: "pink", delay: 0.5 },
+    { size: 250, x: "70%", y: "60%", color: "purple", delay: 1 },
+    { size: 350, x: "10%", y: "70%", color: "pink", delay: 1.5 },
+    { size: 200, x: "40%", y: "30%", color: "purple", delay: 0.3 },
+  ], []);
+
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      {shapes.map((shape, index) => (
+        <motion.div
+          key={index}
+          className="absolute rounded-full blur-3xl"
+          style={{
+            width: shape.size,
+            height: shape.size,
+            left: shape.x,
+            top: shape.y,
+            background: shape.color === "purple" 
+              ? "rgba(139, 92, 246, 0.15)" 
+              : "rgba(251, 207, 232, 0.2)",
+          }}
+          animate={{
+            x: [0, 30, -30, 0],
+            y: [0, -30, 30, 0],
+            scale: [1, 1.1, 0.9, 1],
+          }}
+          transition={{
+            duration: 15 + index * 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: shape.delay,
+          }}
+        />
+      ))}
+
+      {/* Floating particles */}
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={`particle-${i}`}
+          className="absolute rounded-full"
+          style={{
+            width: 4 + Math.random() * 6,
+            height: 4 + Math.random() * 6,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            background: i % 2 === 0 ? "rgba(221,23,100,0.3)" : "rgba(63,41,101,0.3)",
+          }}
+          animate={{
+            y: [0, -40, 0],
+            x: [0, Math.random() * 20 - 10, 0],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 4 + Math.random() * 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: Math.random() * 2,
+          }}
+        />
+      ))}
+
+      {/* Grid pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.015]"
+        style={{
+          backgroundImage: `
+            linear-gradient(#3F2965 1px, transparent 1px),
+            linear-gradient(90deg, #3F2965 1px, transparent 1px)
+          `,
+          backgroundSize: "50px 50px",
+        }}
+      />
+    </div>
+  );
+};
+
+// Enhanced Progress Stepper
 const ProgressStepper = ({ currentStep }) => {
   const steps = [
     { label: "Therapy", icon: Sparkles },
@@ -271,7 +394,12 @@ const ProgressStepper = ({ currentStep }) => {
   ];
 
   return (
-    <div className="animate-fade-in-down mb-4 md:mb-6">
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="mb-4 md:mb-6"
+    >
       <div className="flex items-center justify-center gap-1 md:gap-4">
         {steps.map((step, index) => {
           const Icon = step.icon;
@@ -281,42 +409,76 @@ const ProgressStepper = ({ currentStep }) => {
           return (
             <div key={step.label} className="flex items-center">
               <div className="flex flex-col items-center">
-                <div
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: index * 0.1, type: "spring", stiffness: 200 }}
+                  whileHover={{ scale: 1.1 }}
                   className={`
-                    w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center
+                    relative w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center
                     transition-all duration-500 ease-out
                     ${
                       isActive
-                        ? "bg-linear-to-br from-[#FAE8FF] via-[#FBCFE8] to-[#E9D5FF] text-pink-600 shadow-lg shadow-pink-200/50 border border-pink-200/50"
+                        ? "bg-gradient-to-br from-[#FAE8FF] via-[#FBCFE8] to-[#E9D5FF] text-pink-600 shadow-lg shadow-pink-200/50 border border-pink-200/50"
                         : "bg-slate-100 text-slate-300"
                     }
                     ${isComplete ? "scale-90" : ""}
                   `}
                 >
-                  {isComplete ? (
-                    <Check
-                      size={14}
-                      className="animate-scale-in md:w-4.5 md:h-4.5"
+                  <AnimatePresence mode="wait">
+                    {isComplete ? (
+                      <motion.div
+                        key="check"
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        exit={{ scale: 0 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
+                        <Check size={14} className="md:w-4 md:h-4" />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="icon"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                      >
+                        <Icon size={14} className="md:w-4 md:h-4" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  
+                  {/* Pulse ring for active step */}
+                  {isActive && !isComplete && (
+                    <motion.div
+                      className="absolute inset-0 rounded-xl md:rounded-2xl border-2 border-pink-400"
+                      animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity }}
                     />
-                  ) : (
-                    <Icon size={14} className="md:w-4.5 md:h-4.5" />
                   )}
-                </div>
-                <span
+                </motion.div>
+                
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: index * 0.1 + 0.2 }}
                   className={`
-                  text-[8px] md:text-[10px] font-bold uppercase mt-1 md:mt-2 tracking-wide md:tracking-wider
-                  transition-colors duration-300
-                  ${isActive ? "text-pink-500" : "text-slate-300"}
-                `}
+                    text-[8px] md:text-[10px] font-bold uppercase mt-1 md:mt-2 tracking-wide md:tracking-wider
+                    transition-colors duration-300
+                    ${isActive ? "text-pink-500" : "text-slate-300"}
+                  `}
                 >
                   {step.label}
-                </span>
+                </motion.span>
               </div>
+              
               {index < steps.length - 1 && (
                 <div className="w-4 md:w-16 h-1 mx-1 md:mx-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className={`h-full bg-linear-to-r from-[#F3E8FF] via-[#FBCFE8] to-[#FAE8FF] progress-fill`}
-                    style={{ width: isComplete ? "100%" : "0%" }}
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-[#F3E8FF] via-[#FBCFE8] to-[#FAE8FF]"
+                    initial={{ width: 0 }}
+                    animate={{ width: isComplete ? "100%" : "0%" }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
                   />
                 </div>
               )}
@@ -324,68 +486,120 @@ const ProgressStepper = ({ currentStep }) => {
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
-// Skeleton Loader
+// Enhanced Skeleton Loader
 const SlotSkeleton = () => (
   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
     {[...Array(8)].map((_, i) => (
-      <div
+      <motion.div
         key={i}
-        className="h-14 rounded-2xl skeleton"
-        style={{ animationDelay: `${i * 0.1}s` }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: i * 0.05 }}
+        className="h-14 rounded-2xl bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 bg-[length:200%_100%]"
+        style={{
+          animation: "shimmer 1.5s infinite",
+          animationDelay: `${i * 0.1}s`,
+        }}
       />
     ))}
   </div>
 );
 
-// Animated Button with Ripple
-const RippleButton = ({ children, onClick, className, disabled, ...props }) => {
-  const buttonRef = useRef(null);
+// Ripple Effect Hook
+const useRipple = () => {
+  const [ripples, setRipples] = useState([]);
 
-  const createRipple = (e) => {
-    if (disabled) return;
-
-    const button = buttonRef.current;
-    const ripple = document.createElement("span");
-    const rect = button.getBoundingClientRect();
+  const addRipple = (e, element) => {
+    const rect = element.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    
+    const newRipple = { x, y, size, id: Date.now() };
+    setRipples((prev) => [...prev, newRipple]);
+    
+    setTimeout(() => {
+      setRipples((prev) => prev.filter((r) => r.id !== newRipple.id));
+    }, 600);
+  };
 
-    ripple.style.width = ripple.style.height = size + "px";
-    ripple.style.left = e.clientX - rect.left - size / 2 + "px";
-    ripple.style.top = e.clientY - rect.top - size / 2 + "px";
-    ripple.className = "ripple active";
+  return { ripples, addRipple };
+};
 
-    button.appendChild(ripple);
+// Enhanced Animated Button with Ripple
+const AnimatedButton = ({ children, onClick, className, disabled, variant = "primary", ...props }) => {
+  const buttonRef = useRef(null);
+  const { ripples, addRipple } = useRipple();
+  const [isHovered, setIsHovered] = useState(false);
 
-    setTimeout(() => ripple.remove(), 600);
-    onClick?.(e);
+  const handleClick = (e) => {
+    if (!disabled) {
+      addRipple(e, buttonRef.current);
+      onClick?.(e);
+    }
   };
 
   return (
-    <button
+    <motion.button
       ref={buttonRef}
-      className={`ripple-container ${className}`}
-      onClick={createRipple}
+      onClick={handleClick}
       disabled={disabled}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
+      className={`relative overflow-hidden ${className}`}
       {...props}
     >
+      {/* Ripple effects */}
+      {ripples.map((ripple) => (
+        <motion.span
+          key={ripple.id}
+          className="absolute rounded-full bg-white/30 pointer-events-none"
+          style={{
+            left: ripple.x,
+            top: ripple.y,
+            width: ripple.size,
+            height: ripple.size,
+          }}
+          initial={{ scale: 0, opacity: 0.5 }}
+          animate={{ scale: 4, opacity: 0 }}
+          transition={{ duration: 0.6 }}
+        />
+      ))}
+      
+      {/* Shine effect on hover */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+        initial={{ x: "-100%" }}
+        animate={isHovered && !disabled ? { x: "100%" } : { x: "-100%" }}
+        transition={{ duration: 0.6 }}
+      />
+      
       {children}
-    </button>
+    </motion.button>
   );
 };
 
 // Enhanced Section Title
 const SectionTitle = ({ icon, title, subtitle, delay = 0 }) => (
-  <div
-    className="flex items-center gap-2 md:gap-4 mb-3 md:mb-4 animate-fade-in-up"
-    style={{ animationDelay: `${delay}s` }}
+  <motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay, duration: 0.5 }}
+    className="flex items-center gap-2 md:gap-4 mb-3 md:mb-4"
   >
-    <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-linear-to-br from-pink-50 to-purple-50 text-[#Dd1764] shadow-sm hover-scale shrink-0">
+    <motion.div
+      whileHover={{ scale: 1.1, rotate: [0, -10, 10, 0] }}
+      transition={{ duration: 0.3 }}
+      className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-pink-50 to-purple-50 text-[#DD1764] shadow-sm shrink-0"
+    >
       {icon}
-    </div>
+    </motion.div>
     <div>
       <h3 className="font-black text-sm md:text-base text-[#3F2965] uppercase tracking-tight">
         {title}
@@ -394,219 +608,359 @@ const SectionTitle = ({ icon, title, subtitle, delay = 0 }) => (
         {subtitle}
       </span>
     </div>
-  </div>
+  </motion.div>
 );
 
-// Enhanced Slot Group with Staggered Animation
-const SlotGroup = ({
-  title,
-  icon,
-  slots,
-  selectedSlot,
-  onSelect,
-  formatter,
-}) => (
-  <div className="animate-fade-in-up">
-    <SectionTitle
-      icon={icon}
-      title={title}
-      subtitle={`${slots.length} Available`}
-    />
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
-      {slots.map((s, index) => (
-        <RippleButton
-          key={s}
-          onClick={() => onSelect(s)}
-          className={`
-            py-3 md:py-4 rounded-xl md:rounded-2xl border-2 text-[10px] md:text-[11px] font-black
-            transition-all duration-300 ease-out hover-lift
-            animate-fade-in-up
-            ${
-              selectedSlot === s
-                ? "bg-linear-to-br from-[#3F2965] to-[#4a3275] border-[#3F2965] text-white shadow-lg shadow-purple-200"
-                : "bg-white border-slate-100 text-slate-500 hover:border-[#3F2965]/30 hover:text-[#3F2965]"
-            }
-          `}
-          style={{ animationDelay: `${index * 0.05}s` }}
-        >
-          <span className="flex items-center justify-center gap-1 md:gap-2">
-            {selectedSlot === s && (
-              <Check size={12} className="animate-scale-in md:w-3.5 md:h-3.5" />
-            )}
-            <span className="whitespace-nowrap">{formatter(s)}</span>
-          </span>
-        </RippleButton>
-      ))}
-    </div>
-  </div>
-);
+// Enhanced Time Slot Button
+const TimeSlotButton = ({ slot, isSelected, onSelect, formatter, index }) => {
+  const [isHovered, setIsHovered] = useState(false);
 
-// Enhanced Therapy Card
-const TherapyCard = ({ therapy, isSelected, onClick, index }) => (
-  <button
-    onClick={onClick}
-    className={`
-      w-full text-left p-3 md:p-4 rounded-xl md:rounded-2xl text-[11px] md:text-xs font-bold border-2
-      transition-all duration-300 ease-out hover-lift
-      animate-fade-in-left
-      ${
-        isSelected
-          ? "bg-linear-to-r from-pink-50 to-purple-50 border-[#Dd1764] text-[#3F2965] shadow-md"
-          : "border-transparent text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-      }
-    `}
-    style={{ animationDelay: `${index * 0.05}s` }}
-  >
-    <div className="flex items-center gap-2 md:gap-3">
-      <div
-        className={`
-        w-2 h-2 rounded-full transition-all duration-300 shrink-0
-        ${isSelected ? "bg-[#Dd1764] scale-125" : "bg-slate-200"}
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 20, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay: index * 0.03, type: "spring", stiffness: 200 }}
+      whileHover={{ scale: 1.05, y: -3 }}
+      whileTap={{ scale: 0.95 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      onClick={() => onSelect(slot)}
+      className={`
+        relative py-3 md:py-4 rounded-xl md:rounded-2xl border-2 text-[10px] md:text-[11px] font-black
+        transition-all duration-300 ease-out overflow-hidden
+        ${
+          isSelected
+            ? "bg-gradient-to-br from-[#3F2965] to-[#4a3275] border-[#3F2965] text-white shadow-lg shadow-purple-200"
+            : "bg-white border-slate-100 text-slate-500 hover:border-[#3F2965]/30 hover:text-[#3F2965]"
+        }
       `}
+    >
+      {/* Background glow */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-[#DD1764]/10 to-purple-500/10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isSelected ? 1 : isHovered ? 0.5 : 0 }}
+        transition={{ duration: 0.3 }}
       />
-      <span className="flex-1 leading-tight">{therapy}</span>
-      {isSelected && (
-        <ChevronRight
-          size={14}
-          className="shrink-0 text-[#Dd1764] animate-scale-in"
+      
+      {/* Shine effect */}
+      {isHovered && !isSelected && (
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent"
+          initial={{ x: "-100%" }}
+          animate={{ x: "100%" }}
+          transition={{ duration: 0.5 }}
         />
       )}
-    </div>
-  </button>
-);
+      
+      <span className="relative flex items-center justify-center gap-1 md:gap-2">
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Check size={12} className="md:w-3.5 md:h-3.5" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <span className="whitespace-nowrap">{formatter(slot)}</span>
+      </span>
+      
+      {/* Selection indicator ring */}
+      {isSelected && (
+        <motion.div
+          className="absolute inset-0 rounded-xl md:rounded-2xl border-2 border-white/30"
+          animate={{ scale: [1, 1.05, 1], opacity: [0.5, 0, 0.5] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        />
+      )}
+    </motion.button>
+  );
+};
 
-// Session Type Toggle
-const SessionTypeToggle = ({ sessionType, setSessionType }) => (
-  <div className="flex gap-2 md:gap-4 mb-6 md:mb-10 animate-fade-in-up delay-200">
-    {[
-      { type: "online", icon: Video, label: "Online Session" },
-      { type: "offline", icon: MapPin, label: "In-Person Visit" },
-    ].map(({ type, icon: Icon, label }) => (
-      <RippleButton
-        key={type}
-        onClick={() => setSessionType(type)}
-        className={`
-          flex-1 p-3 md:p-5 rounded-xl md:rounded-2xl border-2 flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-3 
-          font-black text-xs md:text-sm transition-all duration-300 hover-scale
-          ${
-            sessionType === type
-              ? "border-[#3F2965] bg-linear-to-br from-[#3F2965] to-[#4a3275] text-white shadow-lg shadow-purple-200"
-              : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-          }
-        `}
-      >
-        <div
-          className={`
-          p-1.5 md:p-2 rounded-lg md:rounded-xl transition-all duration-300
-          ${sessionType === type ? "bg-white/20" : "bg-slate-50"}
-        `}
-        >
-          <Icon size={16} className="md:w-5 md:h-5" />
-        </div>
-        <span className="text-[10px] sm:text-xs md:text-sm">
-          {type === "online" ? "Online" : "In-Person"}
-        </span>
-      </RippleButton>
-    ))}
-  </div>
-);
+// Enhanced Slot Group
+const SlotGroup = ({ title, icon, slots, selectedSlot, onSelect, formatter }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
 
-// Payment Method Selector for Offline Sessions
-const PaymentMethodSelector = ({
-  paymentMethod,
-  setPaymentMethod,
-  walletBalance,
-}) => (
-  <div className="mb-6 md:mb-10 animate-fade-in-up delay-300">
-    <SectionTitle
-      icon={<Wallet size={16} className="md:w-4.5 md:h-4.5" />}
-      title="Payment Method"
-      subtitle="Choose how you'd like to pay"
-    />
-    <div className="flex gap-2 md:gap-4 mt-3">
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 30 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6 }}
+    >
+      <SectionTitle
+        icon={icon}
+        title={title}
+        subtitle={`${slots.length} Available`}
+      />
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
+        {slots.map((slot, index) => (
+          <TimeSlotButton
+            key={slot}
+            slot={slot}
+            isSelected={selectedSlot === slot}
+            onSelect={onSelect}
+            formatter={formatter}
+            index={index}
+          />
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// Enhanced Therapy Card
+const TherapyCard = ({ therapy, isSelected, onClick, index }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.button
+      initial={{ opacity: 0, x: -30 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05, type: "spring", stiffness: 100 }}
+      whileHover={{ x: 5 }}
+      whileTap={{ scale: 0.98 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      onClick={onClick}
+      className={`
+        relative w-full text-left p-3 md:p-4 rounded-xl md:rounded-2xl text-[11px] md:text-xs font-bold border-2
+        transition-all duration-300 ease-out overflow-hidden
+        ${
+          isSelected
+            ? "bg-gradient-to-r from-pink-50 to-purple-50 border-[#DD1764] text-[#3F2965] shadow-md"
+            : "border-transparent text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+        }
+      `}
+    >
+      {/* Background animation */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-pink-100/50 to-purple-100/50"
+        initial={{ x: "-100%" }}
+        animate={isSelected ? { x: 0 } : { x: "-100%" }}
+        transition={{ duration: 0.3 }}
+      />
+      
+      <div className="relative flex items-center gap-2 md:gap-3">
+        <motion.div
+          animate={{
+            scale: isSelected ? 1.2 : 1,
+            backgroundColor: isSelected ? "#DD1764" : "#e2e8f0",
+          }}
+          transition={{ duration: 0.3 }}
+          className="w-2 h-2 rounded-full shrink-0"
+        />
+        <span className="flex-1 leading-tight">{therapy}</span>
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0, x: 10 }}
+              animate={{ scale: 1, x: 0 }}
+              exit={{ scale: 0, x: 10 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <ChevronRight size={14} className="shrink-0 text-[#DD1764]" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.button>
+  );
+};
+
+// Enhanced Session Type Toggle
+const SessionTypeToggle = ({ sessionType, setSessionType }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2, duration: 0.5 }}
+      className="flex gap-2 md:gap-4 mb-6 md:mb-10"
+    >
       {[
-        {
-          type: "wallet",
-          icon: Wallet,
-          label: "Pay via Wallet",
-          subtitle: `Balance: ₹${walletBalance || 0}`,
-          disabled: (walletBalance || 0) < 500,
-        },
-        {
-          type: "cash",
-          icon: Banknote,
-          label: "Pay Cash",
-          subtitle: "Pay at clinic",
-          disabled: false,
-        },
-      ].map(({ type, icon: Icon, label, subtitle, disabled }) => (
-        <RippleButton
+        { type: "online", icon: Video, label: "Online Session", color: "purple" },
+        { type: "offline", icon: MapPin, label: "In-Person Visit", color: "pink" },
+      ].map(({ type, icon: Icon, label, color }, index) => (
+        <motion.button
           key={type}
-          onClick={() => !disabled && setPaymentMethod(type)}
-          disabled={disabled}
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setSessionType(type)}
           className={`
-            relative flex-1 p-3 md:p-5 rounded-xl md:rounded-2xl border-2 flex flex-col items-center justify-center gap-2 md:gap-3 
-            font-black text-xs md:text-sm transition-all duration-300 hover-scale
-            ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+            relative flex-1 p-3 md:p-5 rounded-xl md:rounded-2xl border-2 flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-3 
+            font-black text-xs md:text-sm transition-all duration-300 overflow-hidden
             ${
-              paymentMethod === type && !disabled
-                ? "border-[#Dd1764] bg-linear-to-br from-pink-50 to-purple-50 text-[#3F2965] shadow-lg shadow-pink-200/50"
+              sessionType === type
+                ? "border-[#3F2965] bg-gradient-to-br from-[#3F2965] to-[#4a3275] text-white shadow-lg shadow-purple-200"
                 : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
             }
           `}
         >
-          <div
+          {/* Selection indicator */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: sessionType === type ? 1 : 0 }}
+            transition={{ duration: 0.3 }}
+          />
+          
+          <motion.div
+            animate={{
+              scale: sessionType === type ? [1, 1.1, 1] : 1,
+              rotate: sessionType === type ? [0, -5, 5, 0] : 0,
+            }}
+            transition={{ duration: 0.5 }}
             className={`
-            p-1.5 md:p-2 rounded-lg md:rounded-xl transition-all duration-300
-            ${
-              paymentMethod === type && !disabled
-                ? "bg-[#Dd1764]/10"
-                : "bg-slate-50"
-            }
-          `}
+              p-1.5 md:p-2 rounded-lg md:rounded-xl transition-all duration-300
+              ${sessionType === type ? "bg-white/20" : "bg-slate-50"}
+            `}
           >
-            <Icon
-              size={16}
-              className={`md:w-5 md:h-5 ${
-                paymentMethod === type && !disabled ? "text-[#Dd1764]" : ""
-              }`}
-            />
-          </div>
-          <div className="text-center">
-            <span className="block text-[10px] sm:text-xs md:text-sm">
-              {label}
-            </span>
-            <span
-              className={`block text-[8px] sm:text-[10px] mt-1 ${
-                paymentMethod === type && !disabled
-                  ? "text-[#Dd1764]"
-                  : "text-slate-300"
-              }`}
-            >
-              {subtitle}
-            </span>
-          </div>
-          {paymentMethod === type && !disabled && (
-            <Check
-              size={14}
-              className="absolute top-2 right-2 text-[#Dd1764] animate-scale-in"
+            <Icon size={16} className="md:w-5 md:h-5" />
+          </motion.div>
+          <span className="relative text-[10px] sm:text-xs md:text-sm">{label}</span>
+          
+          {/* Active pulse */}
+          {sessionType === type && (
+            <motion.div
+              className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
             />
           )}
-        </RippleButton>
+        </motion.button>
       ))}
-    </div>
-    {paymentMethod === "cash" && (
-      <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 animate-fade-in-up">
-        <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
-        <p className="text-xs text-amber-700 font-medium">
-          Please pay ₹500 in cash at the clinic before your session begins.
-        </p>
-      </div>
-    )}
-  </div>
-);
+    </motion.div>
+  );
+};
 
-// Confirmation Modal
+// Enhanced Payment Method Selector
+const PaymentMethodSelector = ({ paymentMethod, setPaymentMethod, walletBalance }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3, duration: 0.5 }}
+      className="mb-6 md:mb-10"
+    >
+      <SectionTitle
+        icon={<Wallet size={16} className="md:w-4 md:h-4" />}
+        title="Payment Method"
+        subtitle="Choose how you'd like to pay"
+      />
+      <div className="flex gap-2 md:gap-4 mt-3">
+        {[
+          {
+            type: "wallet",
+            icon: Wallet,
+            label: "Pay via Wallet",
+            subtitle: `Balance: ₹${walletBalance || 0}`,
+            disabled: (walletBalance || 0) < 500,
+            color: "green",
+          },
+          {
+            type: "cash",
+            icon: Banknote,
+            label: "Pay Cash",
+            subtitle: "Pay at clinic",
+            disabled: false,
+            color: "amber",
+          },
+        ].map(({ type, icon: Icon, label, subtitle, disabled, color }, index) => (
+          <motion.button
+            key={type}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + index * 0.1 }}
+            whileHover={{ scale: disabled ? 1 : 1.02, y: disabled ? 0 : -2 }}
+            whileTap={{ scale: disabled ? 1 : 0.98 }}
+            onClick={() => !disabled && setPaymentMethod(type)}
+            disabled={disabled}
+            className={`
+              relative flex-1 p-3 md:p-5 rounded-xl md:rounded-2xl border-2 flex flex-col items-center justify-center gap-2 md:gap-3 
+              font-black text-xs md:text-sm transition-all duration-300 overflow-hidden
+              ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+              ${
+                paymentMethod === type && !disabled
+                  ? "border-[#DD1764] bg-gradient-to-br from-pink-50 to-purple-50 text-[#3F2965] shadow-lg shadow-pink-200/50"
+                  : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+              }
+            `}
+          >
+            <motion.div
+              animate={{
+                scale: paymentMethod === type && !disabled ? [1, 1.1, 1] : 1,
+                rotate: paymentMethod === type && !disabled ? [0, -10, 10, 0] : 0,
+              }}
+              transition={{ duration: 0.5 }}
+              className={`
+                p-1.5 md:p-2 rounded-lg md:rounded-xl transition-all duration-300
+                ${paymentMethod === type && !disabled ? "bg-[#DD1764]/10" : "bg-slate-50"}
+              `}
+            >
+              <Icon
+                size={16}
+                className={`md:w-5 md:h-5 ${paymentMethod === type && !disabled ? "text-[#DD1764]" : ""}`}
+              />
+            </motion.div>
+            <div className="text-center">
+              <span className="block text-[10px] sm:text-xs md:text-sm">{label}</span>
+              <span
+                className={`block text-[8px] sm:text-[10px] mt-1 ${
+                  paymentMethod === type && !disabled ? "text-[#DD1764]" : "text-slate-300"
+                }`}
+              >
+                {subtitle}
+              </span>
+            </div>
+            
+            <AnimatePresence>
+              {paymentMethod === type && !disabled && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="absolute top-2 right-2"
+                >
+                  <Check size={14} className="text-[#DD1764]" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        ))}
+      </div>
+      
+      <AnimatePresence>
+        {paymentMethod === "cash" && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, y: -10 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2"
+          >
+            <motion.div
+              animate={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 0.5 }}
+            >
+              <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            </motion.div>
+            <p className="text-xs text-amber-700 font-medium">
+              Please pay ₹500 in cash at the clinic before your session begins.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+// Enhanced Confirmation Modal with Particles
 const ConfirmationModal = ({
   isOpen,
   onClose,
@@ -618,257 +972,475 @@ const ConfirmationModal = ({
   sessionType,
   paymentMethod,
 }) => {
-  if (!isOpen) return null;
-
-  // isPaidViaWallet is true for online sessions OR offline sessions with wallet payment
-  const isPaidViaWallet =
-    sessionType === "online" || paymentMethod === "wallet";
+  const isPaidViaWallet = sessionType === "online" || paymentMethod === "wallet";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative bg-white rounded-3xl md:rounded-[2.5rem] p-5 md:p-8 max-w-md w-full shadow-2xl animate-modal-in">
-        {/* Decorative Elements */}
-        <div className="absolute -top-6 -right-6 w-24 h-24 bg-linear-to-br from-[#Dd1764] to-[#3F2965] rounded-full opacity-10 blur-2xl" />
-
-        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6 text-[#3F2965]">
-          <div className="p-2 md:p-3 bg-linear-to-br from-purple-50 to-pink-50 rounded-xl md:rounded-2xl animate-bounce-subtle">
-            {isPaidViaWallet ? (
-              <Wallet size={20} className="md:w-6 md:h-6" />
-            ) : (
-              <Banknote size={20} className="md:w-6 md:h-6" />
-            )}
-          </div>
-          <div>
-            <h3 className="font-black text-lg md:text-xl">Confirm Booking</h3>
-            <p className="text-[10px] md:text-xs text-slate-400 font-medium">
-              {isPaidViaWallet ? "Wallet Payment" : "Cash Payment at Clinic"}
-            </p>
-          </div>
-        </div>
-
-        <div className="p-3 md:p-4 bg-linear-to-r from-purple-50 to-pink-50 rounded-xl md:rounded-2xl mb-4 md:mb-6">
-          <p className="text-sm text-slate-600 leading-relaxed">
-            You're booking{" "}
-            <span className="font-black text-[#3F2965]">{selectedTherapy}</span>
-          </p>
-        </div>
-
-        <div className="bg-slate-50 rounded-xl md:rounded-2xl p-3 md:p-5 mb-5 md:mb-8 space-y-2 md:space-y-3">
-          {[
-            { label: "Date", value: selectedDate, icon: CalendarIcon },
-            { label: "Time", value: formatTo12Hr(selectedSlot), icon: Clock },
-            {
-              label: "Session Type",
-              value: sessionType === "online" ? "Online" : "In-Person",
-              icon: sessionType === "online" ? Video : MapPin,
-            },
-            { label: "Fee", value: "₹500", icon: Wallet },
-            {
-              label: "Payment",
-              value: isPaidViaWallet ? "Via Wallet" : "Cash at Clinic",
-              icon: isPaidViaWallet ? Wallet : Banknote,
-            },
-          ].map((item, i) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between text-[11px] md:text-xs font-bold animate-fade-in-up"
-              style={{ animationDelay: `${i * 0.1}s` }}
-            >
-              <span className="text-slate-400 flex items-center gap-2">
-                <item.icon size={14} />
-                {item.label}
-              </span>
-              <span className="text-[#3F2965]">{item.value}</span>
-            </div>
-          ))}
-        </div>
-
-        {!isPaidViaWallet && (
-          <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl mb-4 animate-fade-in-up delay-200">
-            <AlertCircle size={16} className="text-amber-600" />
-            <span className="text-xs font-medium text-amber-700">
-              Please pay ₹500 in cash at the clinic
-            </span>
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl mb-6 animate-fade-in-up delay-300">
-          <Shield size={16} className="text-green-600" />
-          <span className="text-xs font-medium text-green-700">
-            {isPaidViaWallet
-              ? "Your payment is secure and encrypted"
-              : "Your booking is confirmed"}
-          </span>
-        </div>
-
-        <div className="flex gap-4">
-          <RippleButton
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             onClick={onClose}
-            className="flex-1 py-4 text-xs font-black uppercase text-slate-400 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+          />
+          
+          {/* Modal */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 50 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="relative bg-white rounded-3xl md:rounded-[2.5rem] p-5 md:p-8 max-w-md w-full shadow-2xl overflow-hidden"
           >
-            Cancel
-          </RippleButton>
-          <RippleButton
-            onClick={onConfirm}
-            className="flex-1 py-4 text-xs font-black uppercase text-white bg-linear-to-r from-[#Dd1764] to-[#e91e7e] rounded-xl shadow-lg shadow-pink-200 hover:opacity-90 transition-opacity"
-          >
-            {isPaidViaWallet ? "Confirm & Pay" : "Confirm Booking"}
-          </RippleButton>
-        </div>
-      </div>
-    </div>
+            {/* Decorative Elements */}
+            <motion.div
+              className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-[#DD1764] to-[#3F2965] rounded-full opacity-10 blur-2xl"
+              animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+              transition={{ duration: 10, repeat: Infinity }}
+            />
+            <motion.div
+              className="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-2xl"
+              animate={{ scale: [1.2, 1, 1.2], rotate: [360, 180, 0] }}
+              transition={{ duration: 10, repeat: Infinity }}
+            />
+
+            {/* Close button */}
+            <motion.button
+              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <X size={18} className="text-slate-400" />
+            </motion.button>
+
+            {/* Header */}
+            <div className="relative flex items-center gap-2 md:gap-3 mb-4 md:mb-6 text-[#3F2965]">
+              <motion.div
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="p-2 md:p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl md:rounded-2xl"
+              >
+                {isPaidViaWallet ? (
+                  <Wallet size={20} className="md:w-6 md:h-6" />
+                ) : (
+                  <Banknote size={20} className="md:w-6 md:h-6" />
+                )}
+              </motion.div>
+              <div>
+                <h3 className="font-black text-lg md:text-xl">Confirm Booking</h3>
+                <p className="text-[10px] md:text-xs text-slate-400 font-medium">
+                  {isPaidViaWallet ? "Wallet Payment" : "Cash Payment at Clinic"}
+                </p>
+              </div>
+            </div>
+
+            {/* Therapy info */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="p-3 md:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl md:rounded-2xl mb-4 md:mb-6"
+            >
+              <p className="text-sm text-slate-600 leading-relaxed">
+                You're booking{" "}
+                <span className="font-black text-[#3F2965]">{selectedTherapy}</span>
+              </p>
+            </motion.div>
+
+            {/* Details */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-slate-50 rounded-xl md:rounded-2xl p-3 md:p-5 mb-5 md:mb-8 space-y-2 md:space-y-3"
+            >
+              {[
+                { label: "Date", value: selectedDate, icon: CalendarIcon },
+                { label: "Time", value: formatTo12Hr(selectedSlot), icon: Clock },
+                {
+                  label: "Session Type",
+                  value: sessionType === "online" ? "Online" : "In-Person",
+                  icon: sessionType === "online" ? Video : MapPin,
+                },
+                { label: "Fee", value: "₹500", icon: Wallet },
+                {
+                  label: "Payment",
+                  value: isPaidViaWallet ? "Via Wallet" : "Cash at Clinic",
+                  icon: isPaidViaWallet ? Wallet : Banknote,
+                },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.label}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.05 }}
+                  className="flex items-center justify-between text-[11px] md:text-xs font-bold"
+                >
+                  <span className="text-slate-400 flex items-center gap-2">
+                    <item.icon size={14} />
+                    {item.label}
+                  </span>
+                  <span className="text-[#3F2965]">{item.value}</span>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Cash payment warning */}
+            <AnimatePresence>
+              {!isPaidViaWallet && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl mb-4"
+                >
+                  <AlertCircle size={16} className="text-amber-600" />
+                  <span className="text-xs font-medium text-amber-700">
+                    Please pay ₹500 in cash at the clinic
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Security note */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="flex items-center gap-2 p-3 bg-green-50 rounded-xl mb-6"
+            >
+              <Shield size={16} className="text-green-600" />
+              <span className="text-xs font-medium text-green-700">
+                {isPaidViaWallet ? "Your payment is secure and encrypted" : "Your booking is confirmed"}
+              </span>
+            </motion.div>
+
+            {/* Buttons */}
+            <div className="flex gap-4">
+              <MagneticButton
+                onClick={onClose}
+                className="flex-1 py-4 text-xs font-black uppercase text-slate-400 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </MagneticButton>
+              <MagneticButton
+                onClick={onConfirm}
+                className="flex-1 py-4 text-xs font-black uppercase text-white bg-gradient-to-r from-[#DD1764] to-[#e91e7e] rounded-xl shadow-lg shadow-pink-200 hover:opacity-90 transition-opacity"
+              >
+                {isPaidViaWallet ? "Confirm & Pay" : "Confirm Booking"}
+              </MagneticButton>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
-// Success Overlay
+// Enhanced Success Overlay with Confetti
 const SuccessOverlay = ({ isOpen, onNavigate, isPaidViaWallet }) => {
-  if (!isOpen) return null;
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShowConfetti(true);
+      const timer = setTimeout(() => setShowConfetti(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-linear-to-br from-[#3F2965]/95 to-[#2a1a47]/95 backdrop-blur-md" />
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 bg-gradient-to-br from-[#3F2965]/95 to-[#2a1a47]/95 backdrop-blur-md"
+          />
 
-      <div className="relative bg-white rounded-3xl md:rounded-[2.5rem] p-6 md:p-12 max-w-lg w-full text-center shadow-2xl animate-modal-in overflow-hidden">
-        {/* Confetti-like decorations */}
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-          {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-3 h-3 rounded-full animate-float"
-              style={{
-                background: i % 2 === 0 ? "#Dd1764" : "#3F2965",
-                top: `${20 + i * 15}%`,
-                left: `${10 + i * 15}%`,
-                animationDelay: `${i * 0.2}s`,
-                opacity: 0.3,
-              }}
-            />
-          ))}
-        </div>
-
-        <div className="relative">
-          {/* Success Icon */}
-          <div className="relative mx-auto mb-6">
-            <div className="w-24 h-24 bg-linear-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto animate-success-pop">
-              <div className="w-16 h-16 bg-linear-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                <Check size={32} className="text-white" strokeWidth={3} />
-              </div>
-            </div>
-            {/* Pulse rings */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div
-                className="w-24 h-24 rounded-full border-4 border-green-200"
-                style={{ animation: "pulse-ring 1.5s ease-out infinite" }}
-              />
-            </div>
-          </div>
-
-          <h2 className="text-3xl font-black text-[#3F2965] mb-2 animate-fade-in-up delay-200">
-            Booking Confirmed!
-          </h2>
-          <p className="text-slate-500 mb-8 font-medium animate-fade-in-up delay-300">
-            Your session has been scheduled successfully. We've sent a
-            confirmation to your email.
-          </p>
-
-          {!isPaidViaWallet && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 animate-fade-in-up delay-350">
-              <p className="text-xs font-bold text-amber-700">
-                💰 Remember to pay ₹500 in cash at the clinic before your
-                session!
-              </p>
+          {/* Confetti */}
+          {showConfetti && (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {[...Array(60)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute"
+                  style={{
+                    width: Math.random() * 12 + 6,
+                    height: Math.random() * 12 + 6,
+                    background: ["#DD1764", "#3F2965", "#7c3aed", "#fbbf24", "#34d399", "#f472b6", "#60a5fa"][i % 7],
+                    borderRadius: Math.random() > 0.5 ? "50%" : "2px",
+                    left: `${Math.random() * 100}%`,
+                    top: -20,
+                  }}
+                  initial={{ y: -20, rotate: 0, opacity: 1 }}
+                  animate={{
+                    y: window.innerHeight + 100,
+                    rotate: Math.random() * 720 - 360,
+                    opacity: [1, 1, 0],
+                    x: Math.random() * 200 - 100,
+                  }}
+                  transition={{
+                    duration: 2.5 + Math.random() * 2,
+                    delay: Math.random() * 0.5,
+                    ease: "easeIn",
+                  }}
+                />
+              ))}
             </div>
           )}
 
-          <div className="bg-linear-to-r from-purple-50 to-pink-50 rounded-2xl p-4 mb-8 animate-fade-in-up delay-400">
-            <p className="text-xs font-bold text-[#3F2965]">
-              💡 Tip: Add this session to your calendar to stay reminded!
-            </p>
-          </div>
-
-          <RippleButton
-            onClick={onNavigate}
-            className="w-full py-5 bg-linear-to-r from-[#3F2965] to-[#4a3275] text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg shadow-purple-200 hover:opacity-90 transition-opacity animate-fade-in-up delay-500"
+          {/* Modal */}
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.5, opacity: 0, y: 50 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="relative bg-white rounded-3xl md:rounded-[2.5rem] p-6 md:p-12 max-w-lg w-full text-center shadow-2xl overflow-hidden"
           >
-            View My Sessions <ArrowRight size={20} />
-          </RippleButton>
-        </div>
-      </div>
-    </div>
+            {/* Decorative floating elements */}
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+              {[...Array(8)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-3 h-3 rounded-full"
+                  style={{
+                    background: i % 2 === 0 ? "#DD1764" : "#3F2965",
+                    top: `${20 + i * 10}%`,
+                    left: `${5 + i * 12}%`,
+                    opacity: 0.2,
+                  }}
+                  animate={{
+                    y: [0, -20, 0],
+                    x: [0, 10, 0],
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 3 + i * 0.5,
+                    repeat: Infinity,
+                    delay: i * 0.2,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Success Icon */}
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="relative mx-auto mb-6"
+            >
+              <div className="w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.4, type: "spring" }}
+                  className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center"
+                >
+                  <Check size={32} className="text-white" strokeWidth={3} />
+                </motion.div>
+              </div>
+              
+              {/* Pulse rings */}
+              {[...Array(3)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <motion.div
+                    className="w-24 h-24 rounded-full border-4 border-green-300"
+                    initial={{ scale: 1, opacity: 0.5 }}
+                    animate={{ scale: 2 + i * 0.3, opacity: 0 }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: i * 0.4,
+                      ease: "easeOut",
+                    }}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+
+            <TextReveal delay={0.3}>
+              <h2 className="text-2xl md:text-3xl font-black text-[#3F2965] mb-2">
+                Booking Confirmed! 🎉
+              </h2>
+            </TextReveal>
+            
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-slate-500 mb-8 font-medium"
+            >
+              Your session has been scheduled successfully. We've sent a confirmation to your email.
+            </motion.p>
+
+            {/* Cash payment reminder */}
+            <AnimatePresence>
+              {!isPaidViaWallet && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4"
+                >
+                  <p className="text-xs font-bold text-amber-700">
+                    💰 Remember to pay ₹500 in cash at the clinic before your session!
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Tip */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-4 mb-8"
+            >
+              <p className="text-xs font-bold text-[#3F2965]">
+                💡 Tip: Add this session to your calendar to stay reminded!
+              </p>
+            </motion.div>
+
+            {/* CTA Button */}
+            <MagneticButton
+              onClick={onNavigate}
+              className="w-full py-5 bg-gradient-to-r from-[#3F2965] to-[#4a3275] text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg shadow-purple-200 hover:opacity-90 transition-opacity"
+            >
+              <span>View My Sessions</span>
+              <motion.div
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <ArrowRight size={20} />
+              </motion.div>
+            </MagneticButton>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
-// Error Alert
+// Enhanced Error Alert
 const ErrorAlert = ({ message, onClose }) => {
-  if (!message) return null;
-
   return (
-    <div className="mb-6 p-4 bg-linear-to-r from-red-50 to-pink-50 border border-red-100 text-red-600 rounded-2xl flex items-start gap-3 animate-fade-in-down shadow-sm">
-      <div className="p-1 bg-red-100 rounded-lg shrink-0">
-        <AlertCircle size={16} />
-      </div>
-      <p className="text-sm font-bold flex-1">{message}</p>
-      <button
-        onClick={onClose}
-        className="p-1 hover:bg-red-100 rounded-lg transition-colors"
-      >
-        <X size={16} />
-      </button>
-    </div>
+    <AnimatePresence>
+      {message && (
+        <motion.div
+          initial={{ opacity: 0, y: -20, height: 0 }}
+          animate={{ opacity: 1, y: 0, height: "auto" }}
+          exit={{ opacity: 0, y: -20, height: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mb-6 p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-100 text-red-600 rounded-2xl flex items-start gap-3 shadow-sm overflow-hidden"
+        >
+          <motion.div
+            animate={{ rotate: [0, -10, 10, 0] }}
+            transition={{ duration: 0.5 }}
+            className="p-1 bg-red-100 rounded-lg shrink-0"
+          >
+            <AlertCircle size={16} />
+          </motion.div>
+          <p className="text-sm font-bold flex-1">{message}</p>
+          <motion.button
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            className="p-1 hover:bg-red-100 rounded-lg transition-colors"
+          >
+            <X size={16} />
+          </motion.button>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
-// Empty State
+// Enhanced Empty State
 const EmptyState = () => (
-  <div className="text-center py-16 bg-linear-to-br from-slate-50 to-purple-50/30 rounded-4xl border-2 border-dashed border-slate-200 animate-fade-in-up">
-    <div className="relative inline-block">
-      <Clock className="mx-auto text-slate-200 mb-4 animate-float" size={56} />
-      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center">
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.5 }}
+    className="text-center py-16 bg-gradient-to-br from-slate-50 to-purple-50/30 rounded-[2rem] border-2 border-dashed border-slate-200"
+  >
+    <motion.div
+      animate={{ y: [0, -10, 0] }}
+      transition={{ duration: 3, repeat: Infinity }}
+      className="relative inline-block"
+    >
+      <Clock className="mx-auto text-slate-200 mb-4" size={56} />
+      <motion.div
+        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="absolute -bottom-1 -right-1 w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center"
+      >
         <X size={12} className="text-slate-400" />
-      </div>
-    </div>
-    <p className="text-sm font-black text-slate-400 uppercase mb-2">
-      No Slots Available
-    </p>
+      </motion.div>
+    </motion.div>
+    <p className="text-sm font-black text-slate-400 uppercase mb-2">No Slots Available</p>
     <p className="text-xs text-slate-300">Try selecting a different date</p>
-  </div>
+  </motion.div>
 );
+
+// Session Info Card
+const SessionInfoCard = ({ icon: Icon, label, value }) => (
+  <motion.div
+    whileHover={{ scale: 1.02 }}
+    className="flex items-center justify-between text-xs font-bold p-3 bg-slate-50 rounded-xl"
+  >
+    <span className="text-slate-400 flex items-center gap-2">
+      <Icon size={14} />
+      {label}
+    </span>
+    <span className="text-[#3F2965]">{value}</span>
+  </motion.div>
+);
+
 
 // ==================== MAIN COMPONENT ====================
 const BookingPage = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const scrollableRef = useRef(null);
+const { user } = useAuth();
+const navigate = useNavigate();
+const scrollableRef = useRef(null);
 
-  // --- States ---
-  const [selectedSlot, setSelectedSlot] = useState("");
-  const [sessionType, setSessionType] = useState("online");
-  const [selectedTherapy, setSelectedTherapy] = useState(
-    "Cognitive Behavioural Therapy (CBT)"
-  );
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [note, setNote] = useState("");
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [availabilityId, setAvailabilityId] = useState("");
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+// --- States ---
+const [selectedSlot, setSelectedSlot] = useState("");
+const [sessionType, setSessionType] = useState("online");
+const [selectedTherapy, setSelectedTherapy] = useState("Cognitive Behavioural Therapy (CBT)");
+const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+const [note, setNote] = useState("");
+const [availableSlots, setAvailableSlots] = useState([]);
+const [availabilityId, setAvailabilityId] = useState("");
+const [loadingSlots, setLoadingSlots] = useState(false);
+const [submitting, setSubmitting] = useState(false);
+const [errorMsg, setErrorMsg] = useState("");
+const [paymentMethod, setPaymentMethod] = useState("wallet");
+const [showConfirmModal, setShowConfirmModal] = useState(false);
+const [showSuccess, setShowSuccess] = useState(false);
+const [pageLoaded, setPageLoaded] = useState(false);
 
-  // --- Payment Method State (for offline sessions) ---
-  const [paymentMethod, setPaymentMethod] = useState("wallet"); // "wallet" or "cash"
-
-  // --- UI States ---
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [pageLoaded, setPageLoaded] = useState(false);
-
-  const therapies = [
+    const therapies = [
     "Cognitive Behavioural Therapy (CBT)",
     "Dialectical Behavioural Therapy (DBT)",
     "Acceptance & Commitment Therapy (ACT)",
@@ -916,9 +1488,7 @@ const BookingPage = () => {
     setSelectedSlot("");
     setAvailabilityId("");
     try {
-      const res = await API.get(
-        `/appointment/get-availability?date=${selectedDate}`
-      );
+      const res = await API.get(`/appointment/get-availability?date=${selectedDate}`);
       let fetchedSlots = res.data.data?.slots || [];
       const fetchedId = res.data.data?.availabilityId || "";
       const now = new Date();
@@ -930,8 +1500,7 @@ const BookingPage = () => {
         fetchedSlots = fetchedSlots.filter((slot) => {
           const [slotHour, slotMinute] = slot.split(":").map(Number);
           if (slotHour > currentHour) return true;
-          if (slotHour === currentHour && slotMinute > currentMinute)
-            return true;
+          if (slotHour === currentHour && slotMinute > currentMinute) return true;
           return false;
         });
       }
@@ -960,9 +1529,6 @@ const BookingPage = () => {
     (slot) => parseInt(slot.split(":")[0]) >= 12
   );
 
-  // Calculate isPaidViaWallet
-  // true if: online session OR offline session with wallet payment
-  // false if: offline session with cash payment
   const getIsPaidViaWallet = () => {
     if (sessionType === "online") {
       return true;
@@ -977,7 +1543,6 @@ const BookingPage = () => {
       return;
     }
 
-    // Check wallet balance if paying via wallet
     const isPaidViaWallet = getIsPaidViaWallet();
     if (isPaidViaWallet && (user?.walletBalance || 0) < 500) {
       setErrorMsg(
@@ -1004,10 +1569,9 @@ const BookingPage = () => {
         sessionType: sessionType,
         notes: note,
         availabilityRef: availabilityId,
-        isPaidViaWallet: isPaidViaWallet, // Boolean: true for wallet, false for cash
+        isPaidViaWallet: isPaidViaWallet,
       });
 
-      // Only deduct from wallet if paid via wallet
       if (isPaidViaWallet) {
         user.walletBalance -= 500;
       }
@@ -1024,16 +1588,75 @@ const BookingPage = () => {
 
   const isPaidViaWallet = getIsPaidViaWallet();
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 12,
+      },
+    },
+  };
+
   return (
     <IsLoginUser user={user}>
       <IsVerifiedUser user={user}>
         <IsProfileCompleteUser user={user}>
           <>
-            <style>{animationStyles}</style>
+            {/* Shimmer Animation Keyframes */}
+            <style>{`
+              @keyframes shimmer {
+                0% { background-position: -200% 0; }
+                100% { background-position: 200% 0; }
+              }
+              
+              @keyframes glow {
+                0%, 100% { box-shadow: 0 0 20px rgba(221, 23, 100, 0.3); }
+                50% { box-shadow: 0 0 40px rgba(221, 23, 100, 0.5); }
+              }
+              
+              .animate-glow {
+                animation: glow 2s ease-in-out infinite;
+              }
+              
+              .custom-scrollbar::-webkit-scrollbar {
+                width: 6px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: linear-gradient(180deg, #3F2965, #DD1764);
+                border-radius: 10px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-track {
+                background: #f1f5f9;
+              }
+            `}</style>
 
+            {/* Custom Cursor */}
+            <CustomCursor />
+
+            {/* Scroll Progress Bar */}
+            <ScrollProgressBar />
+
+            {/* Navbar */}
             <Navbar />
 
-            <div className="min-h-screen pt-24 bg-linear-to-br from-[#FDFCFD] via-white to-purple-50/30 font-sans flex flex-col relative overflow-hidden">
+            <div className="min-h-screen pt-24 bg-gradient-to-br from-[#FDFCFD] via-white to-purple-50/30 font-sans flex flex-col relative overflow-hidden">
+              {/* Floating Background Shapes */}
               <FloatingShapes />
 
               {/* Modals */}
@@ -1057,168 +1680,233 @@ const BookingPage = () => {
                 isPaidViaWallet={isPaidViaWallet}
               />
 
-              <main
-                className={`
-          relative z-10 max-w-7xl mx-auto w-full flex-1 flex flex-col px-4 md:px-8 pb-6
-          transition-opacity duration-500
-          ${pageLoaded ? "opacity-100" : "opacity-0"}
-        `}
+              {/* Main Content */}
+              <motion.main
+                variants={containerVariants}
+                initial="hidden"
+                animate={pageLoaded ? "visible" : "hidden"}
+                className="relative z-10 max-w-7xl mx-auto w-full flex-1 flex flex-col px-4 md:px-8 pb-6"
               >
-                {/* Header - Updated with new gradient colors */}
-                <header className="py-3 md:py-4 animate-fade-in-down">
+                {/* Header Section */}
+                <motion.header
+                  variants={itemVariants}
+                  className="py-3 md:py-4"
+                >
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
                     <div>
-                      <h1 className="text-2xl md:text-4xl font-black tracking-tight">
-                        <span
-                          className="bg-clip-text text-transparent"
-                          style={{
-                            backgroundImage: "linear-gradient(135deg, #e91e7e)",
-                          }}
-                        >
-                          Schedule Session
-                        </span>
-                      </h1>
-                      <p className="text-sm text-slate-400 mt-1 font-medium">
+                      <TextReveal>
+                        <h1 className="text-2xl md:text-4xl font-black tracking-tight">
+                          <span className="bg-gradient-to-r from-[#DD1764] via-[#3F2965] to-[#DD1764] bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+                            Schedule Session
+                          </span>
+                        </h1>
+                      </TextReveal>
+                      <motion.p
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="text-sm text-slate-400 mt-1 font-medium"
+                      >
                         Book your personalized therapy session
-                      </p>
+                      </motion.p>
                     </div>
                     <ProgressStepper currentStep={currentStep} />
                   </div>
-                </header>
+                </motion.header>
 
+                {/* Main Grid */}
                 <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 overflow-hidden pb-4">
                   {/* Sidebar */}
-                  <aside className="flex flex-col gap-4 md:gap-6 overflow-hidden animate-fade-in-left">
-                    <div className="glass p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] border border-white/50 shadow-xl shadow-purple-100/20 flex-1 overflow-y-auto custom-scrollbar max-h-100 lg:max-h-none">
-                      <h2 className="font-black text-base md:text-lg mb-4 md:mb-6 text-[#3F2965] flex items-center gap-2">
-                        <Sparkles size={20} className="text-[#Dd1764]" />
-                        THERAPY TYPE
-                      </h2>
-                      <div className="space-y-2">
-                        {therapies.map((t, index) => (
-                          <TherapyCard
-                            key={t}
-                            therapy={t}
-                            isSelected={selectedTherapy === t}
-                            onClick={() => setSelectedTherapy(t)}
-                            index={index}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                  <motion.aside
+                    variants={itemVariants}
+                    className="flex flex-col gap-4 md:gap-6 overflow-hidden"
+                  >
+                    {/* Therapy Type Card */}
+                    <GlowingCard className="group flex-1 overflow-hidden">
+                      <motion.div
+                        initial={{ opacity: 0, x: -50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="bg-white/80 backdrop-blur-xl p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] border border-white/50 shadow-xl shadow-purple-100/20 h-full overflow-y-auto custom-scrollbar max-h-100 lg:max-h-none"
+                      >
+                        <motion.h2
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                          className="font-black text-base md:text-lg mb-4 md:mb-6 text-[#3F2965] flex items-center gap-2"
+                        >
+                          <motion.div
+                            animate={{ rotate: [0, 360] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                          >
+                            <Sparkles size={20} className="text-[#DD1764]" />
+                          </motion.div>
+                          THERAPY TYPE
+                        </motion.h2>
+                        <div className="space-y-2">
+                          {therapies.map((t, index) => (
+                            <TherapyCard
+                              key={t}
+                              therapy={t}
+                              isSelected={selectedTherapy === t}
+                              onClick={() => setSelectedTherapy(t)}
+                              index={index}
+                            />
+                          ))}
+                        </div>
+                      </motion.div>
+                    </GlowingCard>
 
-                    <div className="glass p-4 md:p-6 rounded-2xl md:rounded-4xl border border-white/50 shadow-xl shadow-purple-100/20 shrink-0 animate-fade-in-up delay-300">
+                    {/* Session Details Card */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4, duration: 0.6 }}
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-white/80 backdrop-blur-xl p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-white/50 shadow-xl shadow-purple-100/20 shrink-0"
+                    >
                       <h3 className="font-black mb-3 md:mb-4 flex items-center gap-2 text-[10px] md:text-xs uppercase text-[#3F2965]">
-                        <Info
-                          size={14}
-                          className="text-[#Dd1764] md:w-4 md:h-4"
-                        />{" "}
+                        <motion.div
+                          animate={{ rotate: [0, -10, 10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          <Info size={14} className="text-[#DD1764] md:w-4 md:h-4" />
+                        </motion.div>
                         Session Details
                       </h3>
                       <div className="space-y-2 md:space-y-3">
-                        {[
-                          {
-                            label: "Duration",
-                            value: "60 Minutes",
-                            icon: Clock,
-                          },
-                          { label: "Session Fee", value: "₹500", icon: Wallet },
-                        ].map((item) => (
-                          <div
-                            key={item.label}
-                            className="flex items-center justify-between text-xs font-bold p-3 bg-slate-50 rounded-xl"
-                          >
-                            <span className="text-slate-400 flex items-center gap-2">
-                              <item.icon size={14} />
-                              {item.label}
-                            </span>
-                            <span className="text-[#3F2965]">{item.value}</span>
-                          </div>
-                        ))}
+                        <SessionInfoCard icon={Clock} label="Duration" value="60 Minutes" />
+                        <SessionInfoCard icon={Wallet} label="Session Fee" value="₹500" />
                       </div>
-                    </div>
-                  </aside>
 
-                  {/* Main Content */}
-                  <section className="lg:col-span-2 glass rounded-[2.5rem] border border-white/50 shadow-xl shadow-purple-100/20 flex flex-col overflow-hidden animate-fade-in-right">
+                      {/* Additional Info */}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                        className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl"
+                      >
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#3F2965]">
+                          <Shield size={14} className="text-green-500" />
+                          <span>100% Confidential & Secure</span>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  </motion.aside>
+
+                  {/* Main Content Section */}
+                  <motion.section
+                    variants={itemVariants}
+                    className="lg:col-span-2 bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/50 shadow-xl shadow-purple-100/20 flex flex-col overflow-hidden"
+                  >
                     <div
                       ref={scrollableRef}
                       className="flex-1 overflow-y-auto p-6 md:p-8 lg:p-12 custom-scrollbar"
                     >
-                      <ErrorAlert
-                        message={errorMsg}
-                        onClose={() => setErrorMsg("")}
-                      />
+                      {/* Error Alert */}
+                      <ErrorAlert message={errorMsg} onClose={() => setErrorMsg("")} />
 
-                      {/* Date Picker */}
-                      <div className="mb-6 md:mb-10 animate-fade-in-up">
+                      {/* Date Picker Section */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="mb-6 md:mb-10"
+                      >
                         <SectionTitle
-                          icon={
-                            <CalendarIcon
-                              size={16}
-                              className="md:w-4.5 md:h-4.5"
-                            />
-                          }
+                          icon={<CalendarIcon size={16} className="md:w-4 md:h-4" />}
                           title="Choose Date"
                           subtitle="Select your preferred date"
                         />
                         <div className="flex flex-col sm:flex-row items-stretch gap-2 md:gap-3 mt-2 md:mt-3">
-                          <div className="relative flex-1">
+                          <motion.div
+                            whileHover={{ scale: 1.01 }}
+                            className="relative flex-1"
+                          >
                             <input
                               type="date"
                               min={new Date().toISOString().split("T")[0]}
                               value={selectedDate}
                               onChange={(e) => setSelectedDate(e.target.value)}
-                              className="w-full p-4 pr-12 rounded-2xl bg-slate-50 font-bold text-[#3F2965] outline-none border-2 border-transparent focus:border-[#3F2965]/20 transition-colors"
+                              className="w-full p-4 pr-12 rounded-2xl bg-slate-50 font-bold text-[#3F2965] outline-none border-2 border-transparent focus:border-[#3F2965]/20 transition-all duration-300 hover:bg-slate-100"
                             />
-                          </div>
-                          <RippleButton
+                            <motion.div
+                              className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                              animate={{ scale: [1, 1.1, 1] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            >
+                              <CalendarIcon size={18} className="text-[#DD1764]" />
+                            </motion.div>
+                          </motion.div>
+                          
+                          <AnimatedButton
                             onClick={fetchSlots}
                             disabled={loadingSlots}
-                            className="px-8 py-4 bg-linear-to-r from-[#3F2965] to-[#4a3275] text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-200 hover:opacity-90 transition-all disabled:opacity-50"
+                            className="px-8 py-4 bg-gradient-to-r from-[#3F2965] to-[#4a3275] text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-200 hover:opacity-90 transition-all disabled:opacity-50"
                           >
                             {loadingSlots ? (
-                              <Loader2 size={18} className="animate-spin" />
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              >
+                                <Loader2 size={18} />
+                              </motion.div>
                             ) : (
                               <>
-                                <Search
-                                  size={16}
-                                  className="md:w-4.5 md:h-4.5"
-                                />
-                                <span className="hidden sm:inline">
-                                  Find Slots
-                                </span>
+                                <Search size={16} className="md:w-4 md:h-4" />
+                                <span className="hidden sm:inline">Find Slots</span>
                               </>
                             )}
-                          </RippleButton>
+                          </AnimatedButton>
                         </div>
-                      </div>
+                      </motion.div>
 
-                      {/* Session Type */}
+                      {/* Session Type Toggle */}
                       <SessionTypeToggle
                         sessionType={sessionType}
                         setSessionType={setSessionType}
                       />
 
-                      {/* Payment Method Selector - Only shown for offline sessions */}
-                      {sessionType === "offline" && (
-                        <PaymentMethodSelector
-                          paymentMethod={paymentMethod}
-                          setPaymentMethod={setPaymentMethod}
-                          walletBalance={user?.walletBalance}
-                        />
-                      )}
+                      {/* Payment Method Selector - Only for offline */}
+                      <AnimatePresence>
+                        {sessionType === "offline" && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <PaymentMethodSelector
+                              paymentMethod={paymentMethod}
+                              setPaymentMethod={setPaymentMethod}
+                              walletBalance={user?.walletBalance}
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
-                      {/* Time Slots */}
+                      {/* Time Slots Section */}
                       <div className="space-y-10">
                         {loadingSlots ? (
                           <div className="space-y-8">
                             <div>
                               <div className="flex items-center gap-4 mb-4">
-                                <div className="w-12 h-12 rounded-2xl skeleton" />
+                                <motion.div
+                                  animate={{ opacity: [0.5, 1, 0.5] }}
+                                  transition={{ duration: 1.5, repeat: Infinity }}
+                                  className="w-12 h-12 rounded-2xl bg-gradient-to-r from-slate-100 to-slate-50"
+                                />
                                 <div className="space-y-2">
-                                  <div className="w-24 h-4 skeleton rounded" />
-                                  <div className="w-16 h-3 skeleton rounded" />
+                                  <motion.div
+                                    animate={{ opacity: [0.5, 1, 0.5] }}
+                                    transition={{ duration: 1.5, repeat: Infinity }}
+                                    className="w-24 h-4 bg-gradient-to-r from-slate-100 to-slate-50 rounded"
+                                  />
+                                  <motion.div
+                                    animate={{ opacity: [0.5, 1, 0.5] }}
+                                    transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
+                                    className="w-16 h-3 bg-gradient-to-r from-slate-100 to-slate-50 rounded"
+                                  />
                                 </div>
                               </div>
                               <SlotSkeleton />
@@ -1231,7 +1919,7 @@ const BookingPage = () => {
                             {morningSlots.length > 0 && (
                               <SlotGroup
                                 title="Morning"
-                                icon={<Sun size={18} />}
+                                icon={<Sun size={18} className="text-amber-500" />}
                                 slots={morningSlots}
                                 selectedSlot={selectedSlot}
                                 onSelect={setSelectedSlot}
@@ -1241,7 +1929,7 @@ const BookingPage = () => {
                             {eveningSlots.length > 0 && (
                               <SlotGroup
                                 title="Afternoon & Evening"
-                                icon={<Moon size={18} />}
+                                icon={<Moon size={18} className="text-indigo-500" />}
                                 slots={eveningSlots}
                                 selectedSlot={selectedSlot}
                                 onSelect={setSelectedSlot}
@@ -1252,41 +1940,61 @@ const BookingPage = () => {
                         )}
                       </div>
 
-                      {/* Notes */}
-                      <div className="mt-8 md:mt-12 animate-fade-in-up delay-400">
+                      {/* Notes Section */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="mt-8 md:mt-12"
+                      >
                         <SectionTitle
-                          icon={
-                            <MessageSquare
-                              size={16}
-                              className="md:w-4.5 md:h-4.5"
-                            />
-                          }
+                          icon={<MessageSquare size={16} className="md:w-4 md:h-4" />}
                           title="Session Notes"
                           subtitle="Private & Confidential"
                         />
                         <div className="relative">
-                          <textarea
+                          <motion.textarea
+                            whileFocus={{ scale: 1.01 }}
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                             placeholder="Share any specific concerns or topics you'd like to discuss..."
-                            className="w-full mt-2 md:mt-3 p-3 md:p-5 rounded-2xl md:rounded-3xl bg-slate-50 h-28 md:h-32 resize-none text-xs md:text-sm font-medium outline-none border-2 border-transparent focus:border-[#3F2965]/20 transition-colors"
+                            maxLength={500}
+                            className="w-full mt-2 md:mt-3 p-3 md:p-5 rounded-2xl md:rounded-3xl bg-slate-50 h-28 md:h-32 resize-none text-xs md:text-sm font-medium outline-none border-2 border-transparent focus:border-[#3F2965]/20 focus:bg-white transition-all duration-300"
                           />
-                          <div className="absolute bottom-4 right-4 text-[10px] font-bold text-slate-300">
+                          <motion.div
+                            className="absolute bottom-4 right-4 text-[10px] font-bold"
+                            animate={{
+                              color: note.length >= 450 ? "#DD1764" : "#94a3b8",
+                            }}
+                          >
                             {note.length}/500
-                          </div>
+                          </motion.div>
                         </div>
-                      </div>
+                      </motion.div>
                     </div>
 
-                    {/* Footer */}
-                    <div className="p-4 md:p-8 border-t border-slate-100 bg-white/80 backdrop-blur-sm shrink-0">
+                    {/* Footer / Action Bar */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="p-4 md:p-8 border-t border-slate-100 bg-white/80 backdrop-blur-sm shrink-0"
+                    >
                       <div className="flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4">
-                        <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
-                          <div
+                        {/* Payment Info */}
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          className="flex items-center gap-3 md:gap-4 w-full md:w-auto"
+                        >
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.05, 1],
+                            }}
+                            transition={{ duration: 2, repeat: Infinity }}
                             className={`p-2 md:p-3 rounded-xl md:rounded-2xl ${
                               isPaidViaWallet
-                                ? "bg-linear-to-br from-green-50 to-emerald-50 text-green-600"
-                                : "bg-linear-to-br from-amber-50 to-orange-50 text-amber-600"
+                                ? "bg-gradient-to-br from-green-50 to-emerald-50 text-green-600"
+                                : "bg-gradient-to-br from-amber-50 to-orange-50 text-amber-600"
                             }`}
                           >
                             {isPaidViaWallet ? (
@@ -1294,7 +2002,7 @@ const BookingPage = () => {
                             ) : (
                               <Banknote size={20} className="md:w-6 md:h-6" />
                             )}
-                          </div>
+                          </motion.div>
                           <div>
                             <p className="text-[9px] md:text-[10px] font-black text-slate-300 uppercase tracking-wide md:tracking-widest">
                               Payment Method
@@ -1305,50 +2013,88 @@ const BookingPage = () => {
                                 : "Cash Payment at Clinic"}
                             </p>
                           </div>
-                        </div>
+                        </motion.div>
 
-                        <RippleButton
-                          disabled={
-                            submitting || !selectedSlot || !availabilityId
-                          }
+                        {/* Book Button */}
+                        <MagneticButton
+                          disabled={submitting || !selectedSlot || !availabilityId}
                           onClick={initiateBooking}
                           className={`
-                      w-full md:w-auto px-6 md:px-12 py-3.5 md:py-5 
-                      bg-linear-to-r from-[#Dd1764] to-[#e91e7e] 
-                      text-white font-black rounded-xl md:rounded-2xl 
-                      shadow-xl shadow-pink-200 
-                      hover:opacity-90 active:scale-[0.98]
-                      disabled:opacity-30 disabled:cursor-not-allowed
-                      flex items-center justify-center gap-2 md:gap-3 
-                      transition-all duration-300
-                      text-xs md:text-base
-                      ${selectedSlot && !submitting ? "animate-glow" : ""}
-                    `}
+                            w-full md:w-auto px-6 md:px-12 py-3.5 md:py-5 
+                            bg-gradient-to-r from-[#DD1764] to-[#e91e7e] 
+                            text-white font-black rounded-xl md:rounded-2xl 
+                            shadow-xl shadow-pink-200 
+                            hover:opacity-90 active:scale-[0.98]
+                            disabled:opacity-30 disabled:cursor-not-allowed
+                            flex items-center justify-center gap-2 md:gap-3 
+                            transition-all duration-300
+                            text-xs md:text-base
+                            ${selectedSlot && !submitting ? "animate-glow" : ""}
+                          `}
                         >
                           {submitting ? (
                             <>
-                              <Loader2 className="animate-spin" size={18} />
-                              <span className="hidden sm:inline">
-                                Processing...
-                              </span>
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              >
+                                <Loader2 size={18} />
+                              </motion.div>
+                              <span className="hidden sm:inline">Processing...</span>
                             </>
                           ) : (
                             <>
-                              <Check size={18} />
+                              <motion.div
+                                animate={selectedSlot ? { scale: [1, 1.2, 1] } : {}}
+                                transition={{ duration: 0.5, repeat: Infinity }}
+                              >
+                                <Check size={18} />
+                              </motion.div>
                               <span>
-                                {isPaidViaWallet
-                                  ? "Confirm & Pay ₹500"
-                                  : "Confirm Booking"}
+                                {isPaidViaWallet ? "Confirm & Pay ₹500" : "Confirm Booking"}
                               </span>
+                              <motion.div
+                                animate={{ x: [0, 5, 0] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                              >
+                                <ArrowRight size={16} className="hidden sm:block" />
+                              </motion.div>
                             </>
                           )}
-                        </RippleButton>
+                        </MagneticButton>
                       </div>
-                    </div>
-                  </section>
+
+                      {/* Trust Indicators */}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.7 }}
+                        className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-4 border-t border-slate-100"
+                      >
+                        {[
+                          { icon: Shield, text: "Secure Payment" },
+                          { icon: Clock, text: "Instant Confirmation" },
+                          { icon: Heart, text: "24/7 Support" },
+                        ].map((item, index) => (
+                          <motion.div
+                            key={item.text}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.8 + index * 0.1 }}
+                            className="flex items-center gap-1.5 text-[10px] text-slate-400"
+                          >
+                            <item.icon size={12} className="text-green-500" />
+                            <span className="font-medium">{item.text}</span>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    </motion.div>
+                  </motion.section>
                 </div>
-              </main>
+              </motion.main>
             </div>
+
+            {/* Footer */}
             <Footer />
           </>
         </IsProfileCompleteUser>

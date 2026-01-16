@@ -1,5 +1,13 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  useScroll,
+  useInView,
+} from "framer-motion";
 import {
   Phone,
   Mail,
@@ -15,51 +23,349 @@ import {
   ArrowRight,
   X,
   Star,
+  MousePointer,
+  Zap,
 } from "lucide-react";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import API from "../api/axios";
 import FAQSection from "../components/common/FAQ";
 
-// Bubble Animation Background Component
+// ============== CUSTOM HOOKS ==============
+
+// Custom Hook for Mouse Position
+const useMousePosition = () => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const updateMousePosition = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", updateMousePosition);
+    return () => window.removeEventListener("mousemove", updateMousePosition);
+  }, []);
+
+  return mousePosition;
+};
+
+// ============== ANIMATION COMPONENTS ==============
+
+// Custom Cursor Component
+const CustomCursor = () => {
+  const mousePosition = useMousePosition();
+  const [isHovering, setIsHovering] = useState(false);
+  const cursorX = useSpring(mousePosition.x, { stiffness: 500, damping: 28 });
+  const cursorY = useSpring(mousePosition.y, { stiffness: 500, damping: 28 });
+
+  useEffect(() => {
+    const handleMouseOver = (e) => {
+      if (e.target.closest("button, a, input, textarea, [data-hover]")) {
+        setIsHovering(true);
+      } else {
+        setIsHovering(false);
+      }
+    };
+    window.addEventListener("mouseover", handleMouseOver);
+    return () => window.removeEventListener("mouseover", handleMouseOver);
+  }, []);
+
+  return (
+    <>
+      <motion.div
+        className="fixed w-4 h-4 bg-[#Dd1764] rounded-full pointer-events-none z-[9999] mix-blend-difference hidden lg:block"
+        style={{
+          x: cursorX,
+          y: cursorY,
+          translateX: "-50%",
+          translateY: "-50%",
+        }}
+        animate={{
+          scale: isHovering ? 2.5 : 1,
+          opacity: isHovering ? 0.5 : 1,
+        }}
+        transition={{ duration: 0.2 }}
+      />
+      <motion.div
+        className="fixed w-10 h-10 border-2 border-[#3F2965] rounded-full pointer-events-none z-[9999] mix-blend-difference hidden lg:block"
+        style={{
+          x: cursorX,
+          y: cursorY,
+          translateX: "-50%",
+          translateY: "-50%",
+        }}
+        animate={{
+          scale: isHovering ? 1.5 : 1,
+          opacity: isHovering ? 0 : 1,
+        }}
+        transition={{ duration: 0.2 }}
+      />
+    </>
+  );
+};
+
+// Magnetic Button Component
+const MagneticButton = ({
+  children,
+  className,
+  onClick,
+  disabled,
+  type = "button",
+}) => {
+  const ref = useRef(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouse = (e) => {
+    if (disabled) return;
+    const { clientX, clientY } = e;
+    const { height, width, left, top } = ref.current.getBoundingClientRect();
+    const middleX = clientX - (left + width / 2);
+    const middleY = clientY - (top + height / 2);
+    setPosition({ x: middleX * 0.1, y: middleY * 0.1 });
+  };
+
+  const reset = () => setPosition({ x: 0, y: 0 });
+
+  return (
+    <motion.button
+      ref={ref}
+      type={type}
+      onMouseMove={handleMouse}
+      onMouseLeave={reset}
+      onClick={onClick}
+      disabled={disabled}
+      animate={{ x: position.x, y: position.y }}
+      transition={{ type: "spring", stiffness: 350, damping: 15, mass: 0.5 }}
+      className={className}
+    >
+      {children}
+    </motion.button>
+  );
+};
+
+// Text Reveal Animation Component
+const TextReveal = ({ children, delay = 0 }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+
+  return (
+    <div ref={ref} className="overflow-hidden">
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={isInView ? { y: 0 } : { y: "100%" }}
+        transition={{
+          duration: 0.8,
+          ease: [0.33, 1, 0.68, 1],
+          delay,
+        }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+};
+
+// Animated Counter Component
+const AnimatedCounter = ({ value, suffix = "", duration = 2 }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    if (isInView) {
+      let start = 0;
+      const end = parseInt(value);
+      const incrementTime = Math.max((duration * 1000) / end, 10);
+
+      const counter = setInterval(() => {
+        start += Math.ceil(end / 50);
+        if (start >= end) {
+          setDisplayValue(end);
+          clearInterval(counter);
+        } else {
+          setDisplayValue(start);
+        }
+      }, incrementTime);
+
+      return () => clearInterval(counter);
+    }
+  }, [isInView, value, duration]);
+
+  return (
+    <span ref={ref}>
+      {displayValue}
+      {suffix}
+    </span>
+  );
+};
+
+// Staggered Text Animation
+const StaggerText = ({ text, className, delay = 0 }) => {
+  const words = text.split(" ");
+
+  const container = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05, delayChildren: delay },
+    },
+  };
+
+  const child = {
+    hidden: { opacity: 0, y: 20, rotateX: 90 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      rotateX: 0,
+      transition: {
+        type: "spring",
+        damping: 12,
+        stiffness: 100,
+      },
+    },
+  };
+
+  return (
+    <motion.div
+      className={className}
+      variants={container}
+      initial="hidden"
+      animate="visible"
+    >
+      {words.map((word, index) => (
+        <motion.span key={index} variants={child} className="inline-block mr-2">
+          {word}
+        </motion.span>
+      ))}
+    </motion.div>
+  );
+};
+
+// Glowing Card with Mouse Track
+const GlowingCard = ({ children, className, color = "purple" }) => {
+  const ref = useRef(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const handleMouseMove = useCallback(
+    (e) => {
+      const rect = ref.current?.getBoundingClientRect();
+      if (rect) {
+        mouseX.set(e.clientX - rect.left);
+        mouseY.set(e.clientY - rect.top);
+      }
+    },
+    [mouseX, mouseY]
+  );
+
+  return (
+    <motion.div
+      ref={ref}
+      className={`relative ${className}`}
+      onMouseMove={handleMouseMove}
+    >
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 group-hover:opacity-100 transition duration-300"
+        style={{
+          background: useTransform(
+            [mouseX, mouseY],
+            ([x, y]) =>
+              `radial-gradient(400px circle at ${x}px ${y}px, ${
+                color === "pink"
+                  ? "rgba(221,23,100,0.15)"
+                  : "rgba(63,41,101,0.15)"
+              }, transparent 40%)`
+          ),
+        }}
+      />
+      {children}
+    </motion.div>
+  );
+};
+
+// Enhanced Bubble Animation Background Component
 const BubbleBackground = () => {
   const bubbles = [
-    // Large bubbles
     { size: 280, x: "5%", y: "8%", opacity: 0.15, color: "purple", delay: 0 },
     { size: 320, x: "75%", y: "5%", opacity: 0.12, color: "pink", delay: 0.5 },
     { size: 250, x: "85%", y: "25%", opacity: 0.18, color: "purple", delay: 1 },
     { size: 300, x: "-5%", y: "35%", opacity: 0.14, color: "pink", delay: 1.5 },
     { size: 280, x: "70%", y: "45%", opacity: 0.16, color: "purple", delay: 2 },
     { size: 260, x: "10%", y: "55%", opacity: 0.13, color: "pink", delay: 0.3 },
-    { size: 290, x: "80%", y: "65%", opacity: 0.15, color: "purple", delay: 0.8 },
+    {
+      size: 290,
+      x: "80%",
+      y: "65%",
+      opacity: 0.15,
+      color: "purple",
+      delay: 0.8,
+    },
     { size: 270, x: "0%", y: "75%", opacity: 0.17, color: "pink", delay: 1.2 },
-    { size: 310, x: "65%", y: "85%", opacity: 0.14, color: "purple", delay: 1.8 },
-
-    // Medium bubbles
+    {
+      size: 310,
+      x: "65%",
+      y: "85%",
+      opacity: 0.14,
+      color: "purple",
+      delay: 1.8,
+    },
     { size: 180, x: "30%", y: "12%", opacity: 0.12, color: "pink", delay: 0.2 },
-    { size: 160, x: "55%", y: "20%", opacity: 0.14, color: "purple", delay: 0.7 },
+    {
+      size: 160,
+      x: "55%",
+      y: "20%",
+      opacity: 0.14,
+      color: "purple",
+      delay: 0.7,
+    },
     { size: 200, x: "20%", y: "30%", opacity: 0.11, color: "pink", delay: 1.1 },
-    { size: 170, x: "45%", y: "42%", opacity: 0.13, color: "purple", delay: 0.4 },
+    {
+      size: 170,
+      x: "45%",
+      y: "42%",
+      opacity: 0.13,
+      color: "purple",
+      delay: 0.4,
+    },
     { size: 190, x: "60%", y: "55%", opacity: 0.15, color: "pink", delay: 0.9 },
-    { size: 175, x: "35%", y: "68%", opacity: 0.12, color: "purple", delay: 1.4 },
+    {
+      size: 175,
+      x: "35%",
+      y: "68%",
+      opacity: 0.12,
+      color: "purple",
+      delay: 1.4,
+    },
     { size: 185, x: "50%", y: "78%", opacity: 0.14, color: "pink", delay: 1.7 },
-    { size: 165, x: "25%", y: "88%", opacity: 0.11, color: "purple", delay: 2.1 },
-
-    // Small bubbles
-    { size: 100, x: "15%", y: "18%", opacity: 0.1, color: "purple", delay: 0.1 },
+    {
+      size: 165,
+      x: "25%",
+      y: "88%",
+      opacity: 0.11,
+      color: "purple",
+      delay: 2.1,
+    },
+    {
+      size: 100,
+      x: "15%",
+      y: "18%",
+      opacity: 0.1,
+      color: "purple",
+      delay: 0.1,
+    },
     { size: 90, x: "40%", y: "8%", opacity: 0.12, color: "pink", delay: 0.6 },
-    { size: 110, x: "68%", y: "32%", opacity: 0.09, color: "purple", delay: 1.3 },
-    { size: 95, x: "8%", y: "48%", opacity: 0.11, color: "pink", delay: 0.5 },
-    { size: 105, x: "90%", y: "52%", opacity: 0.1, color: "purple", delay: 1.6 },
-    { size: 85, x: "42%", y: "62%", opacity: 0.12, color: "pink", delay: 1.9 },
-    { size: 115, x: "78%", y: "72%", opacity: 0.08, color: "purple", delay: 2.2 },
-    { size: 92, x: "18%", y: "82%", opacity: 0.11, color: "pink", delay: 0.8 },
-    { size: 88, x: "55%", y: "92%", opacity: 0.1, color: "purple", delay: 1.0 },
+    {
+      size: 110,
+      x: "68%",
+      y: "32%",
+      opacity: 0.09,
+      color: "purple",
+      delay: 1.3,
+    },
   ];
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Main bubbles */}
+      {/* Main bubbles with enhanced animations */}
       {bubbles.map((bubble, index) => (
         <motion.div
           key={index}
@@ -71,22 +377,28 @@ const BubbleBackground = () => {
             top: bubble.y,
             background:
               bubble.color === "purple"
-                ? `radial-gradient(circle at 30% 30%, rgba(139, 92, 246, ${bubble.opacity + 0.05}), rgba(63, 41, 101, ${bubble.opacity}))`
-                : `radial-gradient(circle at 30% 30%, rgba(251, 207, 232, ${bubble.opacity + 0.1}), rgba(221, 23, 100, ${bubble.opacity}))`,
+                ? `radial-gradient(circle at 30% 30%, rgba(139, 92, 246, ${
+                    bubble.opacity + 0.05
+                  }), rgba(63, 41, 101, ${bubble.opacity}))`
+                : `radial-gradient(circle at 30% 30%, rgba(251, 207, 232, ${
+                    bubble.opacity + 0.1
+                  }), rgba(221, 23, 100, ${bubble.opacity}))`,
             filter: "blur(1px)",
           }}
-          initial={{
-            scale: 0.8,
-            opacity: 0,
-          }}
+          initial={{ scale: 0, opacity: 0 }}
           animate={{
             scale: [0.95, 1.05, 0.95],
-            opacity: [bubble.opacity * 0.8, bubble.opacity, bubble.opacity * 0.8],
-            x: [0, 10, -10, 0],
-            y: [0, -15, 5, 0],
+            opacity: [
+              bubble.opacity * 0.8,
+              bubble.opacity,
+              bubble.opacity * 0.8,
+            ],
+            x: [0, 15, -15, 0],
+            y: [0, -20, 10, 0],
+            rotate: [0, 5, -5, 0],
           }}
           transition={{
-            duration: 8 + index * 0.5,
+            duration: 10 + index * 0.5,
             repeat: Infinity,
             ease: "easeInOut",
             delay: bubble.delay,
@@ -94,31 +406,30 @@ const BubbleBackground = () => {
         />
       ))}
 
-      {/* Extra floating small bubbles for depth */}
-      {[...Array(15)].map((_, i) => (
+      {/* Floating particles */}
+      {[...Array(25)].map((_, i) => (
         <motion.div
-          key={`small-${i}`}
+          key={`particle-${i}`}
           className="absolute rounded-full"
           style={{
-            width: 40 + Math.random() * 60,
-            height: 40 + Math.random() * 60,
+            width: 4 + Math.random() * 8,
+            height: 4 + Math.random() * 8,
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
             background:
-              i % 2 === 0
-                ? `radial-gradient(circle at 30% 30%, rgba(167, 139, 250, 0.15), rgba(139, 92, 246, 0.08))`
-                : `radial-gradient(circle at 30% 30%, rgba(251, 207, 232, 0.18), rgba(244, 114, 182, 0.1))`,
+              i % 2 === 0 ? "rgba(221,23,100,0.4)" : "rgba(63,41,101,0.4)",
           }}
           animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.1, 0.2, 0.1],
-            y: [0, -20, 0],
+            y: [0, -40, 0],
+            x: [0, Math.random() * 30 - 15, 0],
+            scale: [1, 1.5, 1],
+            opacity: [0.2, 0.6, 0.2],
           }}
           transition={{
-            duration: 6 + Math.random() * 4,
+            duration: 4 + Math.random() * 3,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: Math.random() * 3,
+            delay: Math.random() * 2,
           }}
         />
       ))}
@@ -134,182 +445,564 @@ const BubbleBackground = () => {
           `,
         }}
       />
+
+      {/* Grid pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `
+            linear-gradient(#3F2965 1px, transparent 1px),
+            linear-gradient(90deg, #3F2965 1px, transparent 1px)
+          `,
+          backgroundSize: "60px 60px",
+        }}
+      />
     </div>
   );
 };
 
-// Contact Info Card Component
-const ContactCard = ({ icon, title, detail, description, color, delay, href, isExternal }) => (
+// Enhanced Contact Info Card Component
+const ContactCard = ({
+  icon,
+  title,
+  detail,
+  description,
+  color,
+  delay,
+  href,
+  isExternal,
+  index,
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.a
+      href={href}
+      target={isExternal ? "_blank" : "_self"}
+      rel={isExternal ? "noopener noreferrer" : ""}
+      data-hover
+      initial={{ opacity: 0, y: 50, rotateX: 20 }}
+      whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+      viewport={{ once: true }}
+      transition={{
+        delay: delay,
+        duration: 0.6,
+        type: "spring",
+        stiffness: 100,
+      }}
+      whileHover={{
+        y: -12,
+        scale: 1.03,
+        rotateY: 5,
+        transition: { duration: 0.3 },
+      }}
+      whileTap={{ scale: 0.97 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className="relative overflow-hidden cursor-pointer block p-5 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white/80 backdrop-blur-sm border border-white/50 shadow-lg hover:shadow-2xl transition-shadow duration-300 group"
+      style={{ transformStyle: "preserve-3d", perspective: "1000px" }}
+    >
+      {/* Animated gradient background */}
+      <motion.div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{
+          background:
+            color === "pink"
+              ? "linear-gradient(135deg, rgba(221,23,100,0.08) 0%, rgba(221,23,100,0.02) 100%)"
+              : "linear-gradient(135deg, rgba(63,41,101,0.08) 0%, rgba(63,41,101,0.02) 100%)",
+        }}
+      />
+
+      {/* Shimmer effect */}
+      <motion.div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100"
+        initial={{ x: "-100%" }}
+        animate={isHovered ? { x: "100%" } : { x: "-100%" }}
+        transition={{ duration: 0.8, ease: "easeInOut" }}
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)",
+        }}
+      />
+
+      {/* Icon with enhanced animation */}
+      <motion.div
+        className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-4 ${
+          color === "pink"
+            ? "bg-gradient-to-br from-[#DD1764]/15 to-[#DD1764]/5 text-[#DD1764]"
+            : "bg-gradient-to-br from-[#3F2965]/15 to-[#3F2965]/5 text-[#3F2965]"
+        }`}
+        animate={
+          isHovered
+            ? {
+                scale: [1, 1.2, 1.1],
+                rotate: [0, -10, 10, 0],
+              }
+            : { scale: 1, rotate: 0 }
+        }
+        transition={{ duration: 0.5 }}
+      >
+        {React.cloneElement(icon, { size: 22 })}
+
+        {/* Icon glow */}
+        <motion.div
+          className="absolute inset-0 rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity"
+          style={{
+            background: color === "pink" ? "#DD1764" : "#3F2965",
+          }}
+        />
+      </motion.div>
+
+      {/* Content */}
+      <motion.h3
+        className="relative font-bold text-base sm:text-lg text-[#3F2965] mb-1"
+        animate={isHovered ? { x: 5 } : { x: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        {title}
+      </motion.h3>
+      <motion.p
+        className={`relative text-sm sm:text-base font-semibold mb-1 ${
+          color === "pink" ? "text-[#DD1764]" : "text-[#3F2965]/80"
+        }`}
+        animate={isHovered ? { x: 5 } : { x: 0 }}
+        transition={{ duration: 0.3, delay: 0.05 }}
+      >
+        {detail}
+      </motion.p>
+      {description && (
+        <motion.p
+          className="relative text-xs sm:text-sm text-[#3F2965]/50"
+          animate={isHovered ? { x: 5 } : { x: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          {description}
+        </motion.p>
+      )}
+
+      {/* Arrow indicator with animation */}
+      <motion.div
+        className="absolute top-5 right-5 sm:top-6 sm:right-6"
+        initial={{ opacity: 0, x: 10 }}
+        animate={isHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: 10 }}
+        transition={{ duration: 0.3 }}
+      >
+        <motion.div
+          animate={isHovered ? { x: [0, 5, 0] } : { x: 0 }}
+          transition={{ duration: 1, repeat: Infinity }}
+        >
+          <ArrowRight
+            size={18}
+            className={color === "pink" ? "text-[#DD1764]" : "text-[#3F2965]"}
+          />
+        </motion.div>
+      </motion.div>
+
+      {/* Corner decoration */}
+      <motion.div
+        className={`absolute -bottom-2 -right-2 w-16 h-16 rounded-full blur-2xl ${
+          color === "pink" ? "bg-[#DD1764]" : "bg-[#3F2965]"
+        }`}
+        initial={{ opacity: 0, scale: 0 }}
+        animate={
+          isHovered ? { opacity: 0.15, scale: 1 } : { opacity: 0, scale: 0 }
+        }
+        transition={{ duration: 0.3 }}
+      />
+
+      {/* Particle effect on hover */}
+      <AnimatePresence>
+        {isHovered && (
+          <>
+            {[...Array(5)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-2 h-2 rounded-full"
+                style={{
+                  background: color === "pink" ? "#DD1764" : "#3F2965",
+                  left: "20%",
+                  bottom: "30%",
+                }}
+                initial={{ scale: 0, opacity: 0.8 }}
+                animate={{
+                  x: Math.cos((i * Math.PI) / 2.5) * 50,
+                  y: Math.sin((i * Math.PI) / 2.5) * 50 - 20,
+                  scale: [0, 1, 0],
+                  opacity: [0.8, 0.4, 0],
+                }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6, delay: i * 0.05 }}
+              />
+            ))}
+          </>
+        )}
+      </AnimatePresence>
+    </motion.a>
+  );
+};
+
+// Enhanced Input Component with Focus Animation
+const FormInput = ({ label, error, ...props }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const [hasValue, setHasValue] = useState(false);
+
+  const handleChange = (e) => {
+    setHasValue(e.target.value.length > 0);
+    if (props.onChange) props.onChange(e);
+  };
+
+  return (
+    <motion.div
+      className="space-y-1.5 sm:space-y-2"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.label
+        className="block text-xs sm:text-sm font-semibold text-[#3F2965] ml-1"
+        animate={{
+          color: isFocused ? "#DD1764" : "#3F2965",
+        }}
+        transition={{ duration: 0.3 }}
+      >
+        {label}
+        {props.required && (
+          <motion.span
+            className="text-[#DD1764] ml-0.5"
+            animate={{ scale: isFocused ? [1, 1.2, 1] : 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            *
+          </motion.span>
+        )}
+      </motion.label>
+      <div className="relative group">
+        {/* Animated border gradient */}
+        <motion.div
+          className="absolute -inset-0.5 bg-gradient-to-r from-[#3F2965] to-[#DD1764] rounded-xl sm:rounded-2xl blur transition-opacity duration-300"
+          animate={{
+            opacity: isFocused ? 0.2 : 0,
+          }}
+        />
+
+        {props.as === "textarea" ? (
+          <motion.textarea
+            {...props}
+            onChange={handleChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            className="relative w-full p-3.5 sm:p-4 bg-white/80 hover:bg-white border-2 border-[#3F2965]/10 focus:border-[#DD1764]/30 focus:bg-white rounded-xl sm:rounded-2xl outline-none transition-all duration-300 text-[#3F2965] text-sm sm:text-base placeholder-[#3F2965]/30 resize-none"
+            whileFocus={{ scale: 1.01 }}
+          />
+        ) : (
+          <motion.input
+            {...props}
+            onChange={handleChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            className="relative w-full p-3.5 sm:p-4 bg-white/80 hover:bg-white border-2 border-[#3F2965]/10 focus:border-[#DD1764]/30 focus:bg-white rounded-xl sm:rounded-2xl outline-none transition-all duration-300 text-[#3F2965] text-sm sm:text-base placeholder-[#3F2965]/30"
+            whileFocus={{ scale: 1.01 }}
+          />
+        )}
+
+        {/* Focus indicator line */}
+        <motion.div
+          className="absolute bottom-0 left-1/2 h-0.5 bg-gradient-to-r from-[#3F2965] to-[#DD1764] rounded-full"
+          initial={{ width: 0, x: "-50%" }}
+          animate={{
+            width: isFocused ? "95%" : "0%",
+            x: "-50%",
+          }}
+          transition={{ duration: 0.3 }}
+        />
+      </div>
+    </motion.div>
+  );
+};
+
+// Enhanced Success Modal with Confetti
+const SuccessModal = ({ isOpen, onClose }) => {
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShowConfetti(true);
+      const timer = setTimeout(() => setShowConfetti(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={onClose}
+        >
+          {/* Confetti */}
+          {showConfetti && (
+            <div className="fixed inset-0 pointer-events-none">
+              {[...Array(50)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-3 h-3 rounded-full"
+                  style={{
+                    background: [
+                      "#DD1764",
+                      "#3F2965",
+                      "#7c3aed",
+                      "#fbbf24",
+                      "#34d399",
+                    ][i % 5],
+                    left: `${Math.random() * 100}%`,
+                    top: -20,
+                  }}
+                  initial={{ y: -20, rotate: 0, opacity: 1 }}
+                  animate={{
+                    y: window.innerHeight + 100,
+                    rotate: Math.random() * 720 - 360,
+                    opacity: [1, 1, 0],
+                  }}
+                  transition={{
+                    duration: 2 + Math.random() * 2,
+                    delay: Math.random() * 0.5,
+                    ease: "easeIn",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0, y: 50, rotateX: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0, rotateX: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 50 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm bg-white rounded-3xl p-6 sm:p-8 shadow-2xl text-center overflow-hidden"
+          >
+            {/* Background decoration */}
+            <div className="absolute inset-0 overflow-hidden">
+              <motion.div
+                className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-2xl"
+                animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+                transition={{ duration: 10, repeat: Infinity }}
+              />
+              <motion.div
+                className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br from-[#DD1764]/20 to-[#3F2965]/20 rounded-full blur-2xl"
+                animate={{ scale: [1.2, 1, 1.2], rotate: [360, 180, 0] }}
+                transition={{ duration: 10, repeat: Infinity }}
+              />
+            </div>
+
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-full transition-colors z-10"
+            >
+              <X size={18} className="text-slate-400" />
+            </button>
+
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", delay: 0.2, stiffness: 200 }}
+              className="relative w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.5, type: "spring" }}
+              >
+                <CheckCircle size={40} className="text-white" />
+              </motion.div>
+
+              {/* Ripple effect */}
+              {[...Array(3)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute inset-0 rounded-full border-2 border-green-400"
+                  initial={{ scale: 1, opacity: 0.5 }}
+                  animate={{ scale: 2 + i * 0.5, opacity: 0 }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: i * 0.4,
+                    ease: "easeOut",
+                  }}
+                />
+              ))}
+            </motion.div>
+
+            <TextReveal delay={0.3}>
+              <h3 className="text-xl sm:text-2xl font-bold text-[#3F2965] mb-2">
+                Message Sent! 🎉
+              </h3>
+            </TextReveal>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-sm sm:text-base text-[#3F2965]/60 mb-6 relative"
+            >
+              Thank you for reaching out. We'll get back to you within 24 hours.
+            </motion.p>
+
+            <MagneticButton
+              onClick={onClose}
+              className="relative w-full py-3 bg-gradient-to-r from-[#3F2965] to-[#5a3d8a] text-white font-bold rounded-xl overflow-hidden group"
+            >
+              <motion.span className="absolute inset-0 bg-gradient-to-r from-[#DD1764] to-[#3F2965] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <span className="relative">Got it!</span>
+            </MagneticButton>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// Social Button Component
+const SocialButton = ({ href, icon, gradient, shadowColor, delay }) => (
   <motion.a
     href={href}
-    target={isExternal ? "_blank" : "_self"}
-    rel={isExternal ? "noopener noreferrer" : ""}
-    initial={{ opacity: 0, y: 30 }}
-    whileInView={{ opacity: 1, y: 0 }}
+    target="_blank"
+    rel="noopener noreferrer"
+    data-hover
+    initial={{ opacity: 0, scale: 0, rotate: -180 }}
+    whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
     viewport={{ once: true }}
-    transition={{ delay, duration: 0.5 }}
-    whileHover={{ y: -8, scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
-    className={`
-      relative overflow-hidden cursor-pointer block
-      p-5 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl
-      bg-white/80 backdrop-blur-sm
-      border border-white/50
-      shadow-lg hover:shadow-2xl
-      transition-all duration-300
-      group
-    `}
+    transition={{ delay, type: "spring", stiffness: 200 }}
+    whileHover={{
+      scale: 1.15,
+      y: -8,
+      rotate: [0, -10, 10, 0],
+      transition: { rotate: { duration: 0.5 } },
+    }}
+    whileTap={{ scale: 0.9 }}
+    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg ${shadowColor} relative overflow-hidden group`}
   >
-    {/* Gradient overlay on hover */}
-    <div
-      className={`
-        absolute inset-0 opacity-0 group-hover:opacity-100
-        transition-opacity duration-300
-        ${
-          color === "pink"
-            ? "bg-gradient-to-br from-[#DD1764]/5 to-transparent"
-            : "bg-gradient-to-br from-[#3F2965]/5 to-transparent"
-        }
-      `}
-    />
-
-    {/* Icon */}
-    <div
-      className={`
-        relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl
-        flex items-center justify-center mb-4
-        transition-transform duration-300 group-hover:scale-110
-        ${
-          color === "pink"
-            ? "bg-gradient-to-br from-[#DD1764]/10 to-[#DD1764]/5 text-[#DD1764]"
-            : "bg-gradient-to-br from-[#3F2965]/10 to-[#3F2965]/5 text-[#3F2965]"
-        }
-      `}
-    >
-      {React.cloneElement(icon, { size: 22 })}
-    </div>
-
-    {/* Content */}
-    <h3 className="relative font-bold text-base sm:text-lg text-[#3F2965] mb-1">
-      {title}
-    </h3>
-    <p
-      className={`relative text-sm sm:text-base font-semibold mb-1 ${
-        color === "pink" ? "text-[#DD1764]" : "text-[#3F2965]/80"
-      }`}
-    >
-      {detail}
-    </p>
-    {description && (
-      <p className="relative text-xs sm:text-sm text-[#3F2965]/50">
-        {description}
-      </p>
-    )}
-
-    {/* Arrow indicator */}
-    <div className="absolute top-5 right-5 sm:top-6 sm:right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-      <ArrowRight
-        size={18}
-        className={color === "pink" ? "text-[#DD1764]" : "text-[#3F2965]"}
-      />
-    </div>
+    {/* Shine effect */}
+    <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+    {icon}
   </motion.a>
 );
 
-// Input Component
-const FormInput = ({ label, error, ...props }) => (
-  <div className="space-y-1.5 sm:space-y-2">
-    <label className="block text-xs sm:text-sm font-semibold text-[#3F2965] ml-1">
-      {label}
-      {props.required && <span className="text-[#DD1764] ml-0.5">*</span>}
-    </label>
-    <div className="relative group">
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3F2965] to-[#DD1764] rounded-xl sm:rounded-2xl opacity-0 group-focus-within:opacity-10 blur transition-opacity duration-300" />
-      {props.as === "textarea" ? (
-        <textarea
-          {...props}
-          className={`
-            relative w-full p-3.5 sm:p-4
-            bg-white/80 hover:bg-white
-            border-2 border-[#3F2965]/10
-            focus:border-[#3F2965]/20 focus:bg-white
-            rounded-xl sm:rounded-2xl
-            outline-none transition-all duration-300
-            text-[#3F2965] text-sm sm:text-base
-            placeholder-[#3F2965]/30
-            resize-none
-          `}
-        />
-      ) : (
-        <input
-          {...props}
-          className={`
-            relative w-full p-3.5 sm:p-4
-            bg-white/80 hover:bg-white
-            border-2 border-[#3F2965]/10
-            focus:border-[#3F2965]/20 focus:bg-white
-            rounded-xl sm:rounded-2xl
-            outline-none transition-all duration-300
-            text-[#3F2965] text-sm sm:text-base
-            placeholder-[#3F2965]/30
-          `}
-        />
-      )}
-    </div>
-  </div>
-);
+// Testimonial Card Component
+const TestimonialCard = ({ item, index }) => {
+  const [isHovered, setIsHovered] = useState(false);
 
-// Success Modal
-const SuccessModal = ({ isOpen, onClose }) => (
-  <AnimatePresence>
-    {isOpen && (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-sm bg-white rounded-3xl p-6 sm:p-8 shadow-2xl text-center"
-        >
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-full transition-colors"
-          >
-            <X size={18} className="text-slate-400" />
-          </button>
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50, rotateY: -15 }}
+      whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.15, type: "spring", stiffness: 100 }}
+      whileHover={{ y: -10, scale: 1.02 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className="relative bg-white/80 backdrop-blur-sm p-5 sm:p-6 rounded-2xl border border-white/50 shadow-lg group overflow-hidden"
+      style={{ transformStyle: "preserve-3d" }}
+    >
+      {/* Background glow */}
+      <motion.div className="absolute inset-0 bg-gradient-to-br from-[#3F2965]/5 to-[#DD1764]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
+      {/* Stars with animation */}
+      <div className="flex gap-1 mb-3 relative">
+        {[...Array(5)].map((_, j) => (
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", delay: 0.2 }}
-            className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30"
+            key={j}
+            initial={{ opacity: 0, scale: 0, rotate: -180 }}
+            whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: index * 0.1 + j * 0.1, type: "spring" }}
+            animate={
+              isHovered
+                ? {
+                    scale: [1, 1.3, 1],
+                    rotate: [0, 15, -15, 0],
+                  }
+                : {}
+            }
           >
-            <CheckCircle size={40} className="text-white" />
+            <Star size={14} className="text-yellow-400 fill-yellow-400" />
           </motion.div>
+        ))}
+      </div>
 
-          <h3 className="text-xl sm:text-2xl font-bold text-[#3F2965] mb-2">
-            Message Sent! 🎉
-          </h3>
-          <p className="text-sm sm:text-base text-[#3F2965]/60 mb-6">
-            Thank you for reaching out. We'll get back to you within 24 hours.
-          </p>
-
-          <button
-            onClick={onClose}
-            className="w-full py-3 bg-gradient-to-r from-[#3F2965] to-[#5a3d8a] text-white font-bold rounded-xl hover:opacity-90 transition-opacity"
-          >
-            Got it!
-          </button>
-        </motion.div>
+      {/* Quote mark */}
+      <motion.div
+        className="absolute top-4 right-4 text-4xl text-[#3F2965]/10 font-serif"
+        animate={
+          isHovered ? { scale: 1.2, opacity: 0.2 } : { scale: 1, opacity: 0.1 }
+        }
+      >
+        "
       </motion.div>
-    )}
-  </AnimatePresence>
+
+      <motion.p
+        className="text-sm text-[#3F2965]/70 italic mb-4 leading-relaxed relative"
+        animate={isHovered ? { x: 5 } : { x: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        "{item.text}"
+      </motion.p>
+
+      <div className="relative">
+        <motion.p
+          className="font-bold text-sm text-[#3F2965]"
+          animate={isHovered ? { x: 5 } : { x: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+        >
+          {item.author}
+        </motion.p>
+        <motion.p
+          className="text-xs text-[#DD1764]"
+          animate={isHovered ? { x: 5 } : { x: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          {item.role}
+        </motion.p>
+      </div>
+
+      {/* Bottom decoration */}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3F2965] to-[#DD1764]"
+        initial={{ scaleX: 0 }}
+        animate={isHovered ? { scaleX: 1 } : { scaleX: 0 }}
+        transition={{ duration: 0.3 }}
+        style={{ transformOrigin: "left" }}
+      />
+    </motion.div>
+  );
+};
+
+// Quick Stat Badge Component
+const StatBadge = ({ icon: Icon, text, delay }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ delay, type: "spring", stiffness: 200 }}
+    whileHover={{ scale: 1.05, y: -3 }}
+    className="flex items-center gap-2 text-[#3F2965]/60 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full cursor-pointer group"
+  >
+    <motion.div
+      animate={{ rotate: [0, 10, -10, 0] }}
+      transition={{ duration: 2, repeat: Infinity, delay: delay }}
+    >
+      <Icon
+        size={16}
+        className="text-[#DD1764] group-hover:text-[#3F2965] transition-colors"
+      />
+    </motion.div>
+    <span className="text-xs sm:text-sm font-medium group-hover:text-[#3F2965] transition-colors">
+      {text}
+    </span>
+  </motion.div>
 );
 
 // Main Contact Page
@@ -323,6 +1016,7 @@ const ContactPage = () => {
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState("");
+  const formRef = useRef(null);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -347,7 +1041,6 @@ const ContactPage = () => {
     }
   };
 
-  // Contact info with actual links
   const contactInfo = [
     {
       icon: <Phone />,
@@ -387,9 +1080,30 @@ const ContactPage = () => {
     },
   ];
 
+  const testimonials = [
+    {
+      text: "The support team responded within hours. Truly exceptional service!",
+      author: "Sarah M.",
+      role: "Verified Client",
+    },
+    {
+      text: "MindSettler helped me find the right therapist. Life-changing experience.",
+      author: "James K.",
+      role: "Verified Client",
+    },
+    {
+      text: "Professional, caring, and always available. Highly recommend!",
+      author: "Emily R.",
+      role: "Verified Client",
+    },
+  ];
+
   return (
     <>
+      <CustomCursor />
+
       <Navbar />
+
       <div
         className="min-h-screen font-sans text-[#3F2965] relative"
         style={{
@@ -403,394 +1117,788 @@ const ContactPage = () => {
           )`,
         }}
       >
-        {/* Bubble Animation Background */}
         <BubbleBackground />
 
         {/* === HERO SECTION === */}
         <section className="relative pt-28 sm:pt-32 lg:pt-36 pb-16 sm:pb-20 lg:pb-28 px-4 overflow-hidden">
           <div className="relative max-w-4xl mx-auto text-center z-10">
-            {/* Badge */}
+            {/* Badge with animation */}
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: -30, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: "spring", stiffness: 200 }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-white/50 mb-6"
             >
-              <Heart size={14} className="text-[#DD1764]" />
+              <motion.div
+                animate={{
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 10, -10, 0],
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Heart size={14} className="text-[#DD1764]" />
+              </motion.div>
               <span className="text-xs sm:text-sm font-semibold text-[#3F2965]">
                 We're here to help
               </span>
+              <motion.div
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Sparkles size={12} className="text-yellow-500" />
+              </motion.div>
             </motion.div>
 
-            {/* Title */}
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 sm:mb-6"
-            >
-              Let's Start a{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3F2965] via-[#DD1764] to-[#3F2965]">
-                Conversation
-              </span>
-            </motion.h1>
+            {/* Title with enhanced animation */}
+            <div className="overflow-hidden mb-4 sm:mb-6">
+              <motion.h1
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 50, damping: 20 }}
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold"
+              >
+                Let's Start a{" "}
+                <motion.span
+                  className="text-transparent bg-clip-text bg-gradient-to-r from-[#3F2965] via-[#DD1764] to-[#3F2965] inline-block"
+                  animate={{
+                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                  }}
+                  transition={{ duration: 5, repeat: Infinity }}
+                  style={{ backgroundSize: "200% 200%" }}
+                >
+                  Conversation
+                </motion.span>
+              </motion.h1>
+            </div>
 
             {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+            <StaggerText
+              text="MindSettler provides a safe, supportive environment. Reach out for guidance, book a consultation, or just say hello."
               className="text-sm sm:text-base lg:text-lg text-[#3F2965]/60 max-w-2xl mx-auto leading-relaxed"
-            >
-              MindSettler provides a safe, supportive environment. Reach out for
-              guidance, book a consultation, or just say hello.
-            </motion.p>
+              delay={0.3}
+            />
 
             {/* Quick stats */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
               className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mt-8 sm:mt-10"
             >
-              {[
-                { icon: Clock, text: "24h Response" },
-                { icon: Star, text: "5-Star Support" },
-                { icon: MapPin, text: "Global Reach" },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 text-[#3F2965]/60 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full"
-                >
-                  <item.icon size={16} className="text-[#DD1764]" />
-                  <span className="text-xs sm:text-sm font-medium">
-                    {item.text}
-                  </span>
-                </div>
-              ))}
+              <StatBadge icon={Clock} text="24h Response" delay={0.6} />
+              <StatBadge icon={Star} text="5-Star Support" delay={0.7} />
+              <StatBadge icon={MapPin} text="Global Reach" delay={0.8} />
             </motion.div>
           </div>
         </section>
 
         {/* === MAIN CONTENT === */}
-        <section className="relative px-4 sm:px-6 pb-16 sm:pb-20 lg:pb-28 z-10">
+        <section
+          ref={formRef}
+          className="relative px-4 sm:px-6 pb-16 sm:pb-20 lg:pb-28 z-10"
+        >
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
               {/* === LEFT: CONTACT CARDS === */}
               <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 {/* Section title - Mobile only */}
-                <div className="lg:hidden mb-2">
+                <motion.div
+                  className="lg:hidden mb-2"
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                >
                   <h2 className="text-xl sm:text-2xl font-bold text-[#3F2965]">
                     Reach Out
                   </h2>
                   <p className="text-sm text-[#3F2965]/50">
                     Choose your preferred way to connect
                   </p>
-                </div>
+                </motion.div>
 
                 {/* Contact cards grid */}
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   {contactInfo.map((item, index) => (
-                    <ContactCard key={index} {...item} delay={index * 0.1} />
+                    <ContactCard
+                      key={index}
+                      {...item}
+                      delay={index * 0.1}
+                      index={index}
+                    />
                   ))}
                 </div>
 
-                {/* Additional info card */}
+                {/* Urgent Help Card */}
                 <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 50, scale: 0.95 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.4 }}
-                  className="relative overflow-hidden p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#3F2965] to-[#5a3d8a] text-white"
+                  transition={{ delay: 0.4, type: "spring" }}
+                  whileHover={{ scale: 1.02, y: -5 }}
+                  className="relative overflow-hidden p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#3F2965] to-[#5a3d8a] text-white group"
                 >
-                  {/* Decorative circles */}
-                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-                  <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#DD1764]/20 rounded-full blur-2xl" />
+                  {/* Animated decorative circles */}
+                  <motion.div
+                    className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"
+                    animate={{
+                      scale: [1, 1.3, 1],
+                      rotate: [0, 180, 360],
+                    }}
+                    transition={{ duration: 15, repeat: Infinity }}
+                  />
+                  <motion.div
+                    className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#DD1764]/20 rounded-full blur-2xl"
+                    animate={{
+                      scale: [1.3, 1, 1.3],
+                      rotate: [360, 180, 0],
+                    }}
+                    transition={{ duration: 15, repeat: Infinity }}
+                  />
 
                   <div className="relative">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles size={18} className="text-yellow-300" />
+                    <motion.div
+                      className="flex items-center gap-2 mb-3"
+                      initial={{ x: -20, opacity: 0 }}
+                      whileInView={{ x: 0, opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      <motion.div
+                        animate={{
+                          rotate: [0, 15, -15, 0],
+                          scale: [1, 1.2, 1],
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <Sparkles size={18} className="text-yellow-300" />
+                      </motion.div>
                       <span className="text-xs font-bold uppercase tracking-wider text-white/70">
                         Quick Support
                       </span>
-                    </div>
-                    <h3 className="text-lg sm:text-xl font-bold mb-2">
-                      Need Urgent Help?
-                    </h3>
-                    <p className="text-sm text-white/70 mb-4 leading-relaxed">
+                    </motion.div>
+
+                    <TextReveal delay={0.6}>
+                      <h3 className="text-lg sm:text-xl font-bold mb-2">
+                        Need Urgent Help?
+                      </h3>
+                    </TextReveal>
+
+                    <motion.p
+                      className="text-sm text-white/70 mb-4 leading-relaxed"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.7 }}
+                    >
                       Our support team is available for emergencies. Don't
                       hesitate to reach out.
-                    </p>
-                    <a
+                    </motion.p>
+
+                    <motion.a
                       href="tel:+919974631313"
-                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-[#3F2965] font-bold text-sm rounded-xl hover:bg-white/90 transition-colors"
+                      data-hover
+                      whileHover={{ scale: 1.05, x: 5 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-[#3F2965] font-bold text-sm rounded-xl hover:bg-white/90 transition-colors relative overflow-hidden group/btn"
                     >
-                      <Phone size={16} />
-                      Call Now
-                    </a>
+                      <motion.span className="absolute inset-0 bg-gradient-to-r from-[#DD1764]/20 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                      <motion.div
+                        animate={{ rotate: [0, 20, -20, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <Phone size={16} />
+                      </motion.div>
+                      <span className="relative">Call Now</span>
+                      <motion.span
+                        animate={{ x: [0, 5, 0] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        →
+                      </motion.span>
+                    </motion.a>
                   </div>
                 </motion.div>
 
                 {/* Social Connect Card */}
                 <motion.div
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.5 }}
+                  transition={{ delay: 0.5, type: "spring" }}
                   className="relative overflow-hidden p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/80 backdrop-blur-sm border border-white/50 shadow-lg"
                 >
-                  <h3 className="text-lg font-bold text-[#3F2965] mb-4">
-                    Connect With Us
-                  </h3>
+                  <TextReveal delay={0.6}>
+                    <h3 className="text-lg font-bold text-[#3F2965] mb-4">
+                      Connect With Us
+                    </h3>
+                  </TextReveal>
+
                   <div className="flex gap-3">
-                    {/* WhatsApp */}
-                    <motion.a
+                    <SocialButton
                       href="https://wa.me/919974631313?text=Hi%20MindSettler%2C%20I%20would%20like%20to%20know%20more%20about%20your%20services."
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      whileHover={{ scale: 1.1, y: -3 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white shadow-lg shadow-green-500/30"
-                    >
-                      <MessageCircle size={22} />
-                    </motion.a>
-
-                    {/* Instagram */}
-                    <motion.a
+                      icon={<MessageCircle size={22} />}
+                      gradient="from-green-400 to-green-600"
+                      shadowColor="shadow-green-500/30"
+                      delay={0.7}
+                    />
+                    <SocialButton
                       href="https://www.instagram.com/mindsettlerbypb?igsh=MTdkeXcxaHd5dG50Ng=="
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      whileHover={{ scale: 1.1, y: -3 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center text-white shadow-lg shadow-pink-500/30"
-                    >
-                      <Instagram size={22} />
-                    </motion.a>
-
-                    {/* Email */}
-                    <motion.a
+                      icon={<Instagram size={22} />}
+                      gradient="from-[#833AB4] via-[#FD1D1D] to-[#F77737]"
+                      shadowColor="shadow-pink-500/30"
+                      delay={0.8}
+                    />
+                    <SocialButton
                       href="mailto:contact@mindsettler.com?subject=Inquiry%20from%20Website"
-                      whileHover={{ scale: 1.1, y: -3 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#3F2965] to-[#5a3d8a] flex items-center justify-center text-white shadow-lg shadow-purple-500/30"
-                    >
-                      <Mail size={22} />
-                    </motion.a>
-
-                    {/* Phone */}
-                    <motion.a
+                      icon={<Mail size={22} />}
+                      gradient="from-[#3F2965] to-[#5a3d8a]"
+                      shadowColor="shadow-purple-500/30"
+                      delay={0.9}
+                    />
+                    <SocialButton
                       href="tel:+919974631313"
-                      whileHover={{ scale: 1.1, y: -3 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#DD1764] to-[#e83d7f] flex items-center justify-center text-white shadow-lg shadow-pink-500/30"
-                    >
-                      <Phone size={22} />
-                    </motion.a>
+                      icon={<Phone size={22} />}
+                      gradient="from-[#DD1764] to-[#e83d7f]"
+                      shadowColor="shadow-pink-500/30"
+                      delay={1.0}
+                    />
                   </div>
-                  <p className="text-xs text-[#3F2965]/50 mt-4">
+
+                  <motion.p
+                    className="text-xs text-[#3F2965]/50 mt-4"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 1.1 }}
+                  >
                     Click any icon to connect instantly
-                  </p>
+                  </motion.p>
                 </motion.div>
               </div>
 
               {/* === RIGHT: CONTACT FORM === */}
               <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, x: 50, rotateY: 10 }}
+                whileInView={{ opacity: 1, x: 0, rotateY: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
+                transition={{ duration: 0.8, type: "spring" }}
                 className="lg:col-span-3"
+                style={{ transformStyle: "preserve-3d" }}
               >
-                <div className="relative bg-white/80 backdrop-blur-sm p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl lg:rounded-[40px] shadow-xl border border-white/50">
-                  {/* Decorative gradient */}
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3F2965] via-[#DD1764] to-[#3F2965] rounded-t-3xl" />
+                <GlowingCard className="group">
+                  <div className="relative bg-white/80 backdrop-blur-sm p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl lg:rounded-[40px] shadow-xl border border-white/50 overflow-hidden">
+                    {/* Decorative gradient line */}
+                    <motion.div
+                      className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3F2965] via-[#DD1764] to-[#3F2965] rounded-t-3xl"
+                      initial={{ scaleX: 0 }}
+                      whileInView={{ scaleX: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.3, duration: 0.8 }}
+                    />
 
-                  {/* Form header */}
-                  <div className="mb-6 sm:mb-8">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-[#3F2965] mb-2">
-                      Get In Touch
-                    </h2>
-                    <p className="text-sm sm:text-base text-[#3F2965]/50">
-                      Fill out the form and we'll respond within 24 hours.
-                    </p>
-                  </div>
+                    {/* Background animation */}
+                    <motion.div
+                      className="absolute -top-20 -right-20 w-40 h-40 bg-[#DD1764]/5 rounded-full blur-3xl"
+                      animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
+                      transition={{ duration: 10, repeat: Infinity }}
+                    />
+                    <motion.div
+                      className="absolute -bottom-20 -left-20 w-40 h-40 bg-[#3F2965]/5 rounded-full blur-3xl"
+                      animate={{ scale: [1.2, 1, 1.2], rotate: [90, 0, 90] }}
+                      transition={{ duration: 10, repeat: Infinity }}
+                    />
 
-                  {/* Error message */}
-                  <AnimatePresence>
-                    {error && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="mb-5 p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-red-600 text-sm font-medium"
+                    {/* Form header */}
+                    <div className="relative mb-6 sm:mb-8">
+                      <TextReveal>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-[#3F2965] mb-2">
+                          Get In Touch
+                        </h2>
+                      </TextReveal>
+                      <motion.p
+                        className="text-sm sm:text-base text-[#3F2965]/50"
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.3 }}
                       >
-                        <X size={16} />
-                        {error}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Form */}
-                  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                    {/* Name & Email row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                      <FormInput
-                        label="Name"
-                        name="name"
-                        type="text"
-                        placeholder="John Doe"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                      />
-                      <FormInput
-                        label="Email"
-                        name="email"
-                        type="email"
-                        placeholder="john@example.com"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                      />
+                        Fill out the form and we'll respond within 24 hours.
+                      </motion.p>
                     </div>
-
-                    {/* Subject */}
-                    <FormInput
-                      label="Subject"
-                      name="subject"
-                      type="text"
-                      placeholder="Booking / General Inquiry / Feedback"
-                      value={formData.subject}
-                      onChange={handleChange}
-                    />
-
-                    {/* Message */}
-                    <FormInput
-                      label="Message"
-                      name="message"
-                      as="textarea"
-                      rows={4}
-                      placeholder="Tell us how we can help you..."
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                    />
-
-                    {/* Submit button */}
-                    <motion.button
-                      type="submit"
-                      disabled={loading}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      className={`
-                        relative w-full py-4 sm:py-4.5
-                        bg-gradient-to-r from-[#DD1764] via-[#e83d7f] to-[#DD1764]
-                        bg-[length:200%_100%] bg-left hover:bg-right
-                        text-white font-bold text-sm sm:text-base
-                        rounded-xl sm:rounded-2xl
-                        transition-all duration-500
-                        flex items-center justify-center gap-2
-                        shadow-xl shadow-[#DD1764]/20
-                        hover:shadow-2xl hover:shadow-[#DD1764]/30
-                        disabled:opacity-70 disabled:cursor-not-allowed
-                        overflow-hidden group
-                      `}
-                    >
-                      {/* Shine effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-
-                      {loading ? (
-                        <Loader2 className="animate-spin" size={20} />
-                      ) : (
-                        <>
-                          <span>Send Message</span>
-                          <Send
-                            size={18}
-                            className="group-hover:translate-x-1 transition-transform"
-                          />
-                        </>
+                    {/* Error message */}
+                    <AnimatePresence>
+                      {error && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                          className="mb-5 p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-red-600 text-sm font-medium"
+                        >
+                          <motion.div
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{ duration: 0.5 }}
+                          >
+                            <X size={16} />
+                          </motion.div>
+                          {error}
+                        </motion.div>
                       )}
-                    </motion.button>
-                  </form>
+                    </AnimatePresence>
 
-                  {/* Privacy note */}
-                  <p className="mt-4 sm:mt-5 text-center text-[10px] sm:text-xs text-[#3F2965]/40">
-                    By submitting, you agree to our{" "}
-                    <a href="#" className="underline hover:text-[#DD1764]">
-                      Privacy Policy
-                    </a>
-                    . We'll never share your information.
-                  </p>
-                </div>
+                    {/* Form */}
+                    <form
+                      onSubmit={handleSubmit}
+                      className="space-y-4 sm:space-y-5 relative"
+                    >
+                      {/* Name & Email row */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                        <FormInput
+                          label="Name"
+                          name="name"
+                          type="text"
+                          placeholder="John Doe"
+                          value={formData.name}
+                          onChange={handleChange}
+                          required
+                        />
+                        <FormInput
+                          label="Email"
+                          name="email"
+                          type="email"
+                          placeholder="john@example.com"
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
+
+                      {/* Subject */}
+                      <FormInput
+                        label="Subject"
+                        name="subject"
+                        type="text"
+                        placeholder="Booking / General Inquiry / Feedback"
+                        value={formData.subject}
+                        onChange={handleChange}
+                      />
+
+                      {/* Message */}
+                      <FormInput
+                        label="Message"
+                        name="message"
+                        as="textarea"
+                        rows={4}
+                        placeholder="Tell us how we can help you..."
+                        value={formData.message}
+                        onChange={handleChange}
+                        required
+                      />
+
+                      {/* Submit button with enhanced animations */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.5 }}
+                      >
+                        <MagneticButton
+                          type="submit"
+                          disabled={loading}
+                          className={`
+                            relative w-full py-4 sm:py-4.5
+                            bg-gradient-to-r from-[#DD1764] via-[#e83d7f] to-[#DD1764]
+                            bg-[length:200%_100%] bg-left hover:bg-right
+                            text-white font-bold text-sm sm:text-base
+                            rounded-xl sm:rounded-2xl
+                            transition-all duration-500
+                            flex items-center justify-center gap-2
+                            shadow-xl shadow-[#DD1764]/20
+                            hover:shadow-2xl hover:shadow-[#DD1764]/30
+                            disabled:opacity-70 disabled:cursor-not-allowed
+                            overflow-hidden group
+                          `}
+                        >
+                          {/* Animated background gradient */}
+                          <motion.div className="absolute inset-0 bg-gradient-to-r from-[#3F2965] to-[#DD1764] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                          {/* Shine effect */}
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            initial={{ x: "-200%" }}
+                            animate={{ x: loading ? "0%" : "-200%" }}
+                            whileHover={{ x: "200%" }}
+                            transition={{
+                              duration: loading ? 1.5 : 0.8,
+                              repeat: loading ? Infinity : 0,
+                              ease: "linear",
+                            }}
+                          />
+
+                          {/* Ripple effect on hover */}
+                          <motion.div
+                            className="absolute inset-0 rounded-xl sm:rounded-2xl"
+                            initial={{ scale: 0, opacity: 0.3 }}
+                            whileHover={{ scale: 2, opacity: 0 }}
+                            transition={{ duration: 0.6 }}
+                            style={{
+                              background:
+                                "radial-gradient(circle, white 0%, transparent 70%)",
+                            }}
+                          />
+
+                          {/* Pulse ring when not loading */}
+                          {!loading && (
+                            <motion.div
+                              className="absolute inset-0 rounded-xl sm:rounded-2xl"
+                              animate={{
+                                boxShadow: [
+                                  "0 0 0 0 rgba(221,23,100,0.4)",
+                                  "0 0 0 15px rgba(221,23,100,0)",
+                                ],
+                              }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            />
+                          )}
+
+                          {loading ? (
+                            <motion.div
+                              className="relative flex items-center gap-2"
+                              animate={{ opacity: [0.7, 1, 0.7] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            >
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{
+                                  duration: 1,
+                                  repeat: Infinity,
+                                  ease: "linear",
+                                }}
+                              >
+                                <Loader2 size={20} />
+                              </motion.div>
+                              <span>Sending...</span>
+                            </motion.div>
+                          ) : (
+                            <motion.div className="relative flex items-center gap-2">
+                              <span>Send Message</span>
+                              <motion.div
+                                animate={{ x: [0, 5, 0] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                              >
+                                <Send size={18} />
+                              </motion.div>
+                            </motion.div>
+                          )}
+                        </MagneticButton>
+                      </motion.div>
+                    </form>
+
+                    {/* Privacy note with animation */}
+                    <motion.p
+                      className="mt-4 sm:mt-5 text-center text-[10px] sm:text-xs text-[#3F2965]/40"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.7 }}
+                    >
+                      By submitting, you agree to our{" "}
+                      <motion.a
+                        href="#"
+                        className="underline hover:text-[#DD1764] transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        Privacy Policy
+                      </motion.a>
+                      . We'll never share your information.
+                    </motion.p>
+
+                    {/* Trust indicators */}
+                    <motion.div
+                      className="mt-6 pt-6 border-t border-[#3F2965]/10"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.8 }}
+                    >
+                      <div className="flex flex-wrap justify-center gap-4">
+                        {[
+                          { icon: "🔒", text: "Secure" },
+                          { icon: "⚡", text: "Fast Response" },
+                          { icon: "💯", text: "Confidential" },
+                        ].map((item, i) => (
+                          <motion.div
+                            key={i}
+                            className="flex items-center gap-1.5 text-[#3F2965]/50 text-xs"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.9 + i * 0.1 }}
+                            whileHover={{ scale: 1.1, color: "#3F2965" }}
+                          >
+                            <motion.span
+                              animate={{ rotate: [0, 10, -10, 0] }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                delay: i * 0.3,
+                              }}
+                            >
+                              {item.icon}
+                            </motion.span>
+                            <span>{item.text}</span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </div>
+                </GlowingCard>
               </motion.div>
             </div>
           </div>
         </section>
 
-        {/* === TESTIMONIALS STRIP === */}
-        <section className="relative py-12 sm:py-16 z-10">
+        {/* === TESTIMONIALS SECTION === */}
+        <section className="relative py-16 sm:py-20 z-10">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            {/* Section Header */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-8 sm:mb-10"
+              className="text-center mb-10 sm:mb-14"
             >
-              <h3 className="text-lg sm:text-xl font-bold text-[#3F2965] mb-2">
-                What People Say
-              </h3>
-              <p className="text-sm text-[#3F2965]/50">
+              <motion.span
+                className="inline-block text-[#DD1764] font-bold tracking-[0.2em] uppercase text-xs sm:text-sm mb-3"
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                ✨ Testimonials
+              </motion.span>
+
+              <TextReveal>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#3F2965] mb-2">
+                  What People Say
+                </h3>
+              </TextReveal>
+
+              <motion.p
+                className="text-sm text-[#3F2965]/50 max-w-md mx-auto"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 }}
+              >
                 Trusted by thousands seeking mental wellness
-              </p>
+              </motion.p>
             </motion.div>
 
+            {/* Testimonials Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {testimonials.map((item, i) => (
+                <TestimonialCard key={i} item={item} index={i} />
+              ))}
+            </div>
+
+            {/* Floating Stats */}
+            <motion.div
+              className="mt-12 sm:mt-16 flex flex-wrap justify-center gap-6 sm:gap-10"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+            >
               {[
-                {
-                  text: "The support team responded within hours. Truly exceptional service!",
-                  author: "Sarah M.",
-                  role: "Verified Client",
-                },
-                {
-                  text: "MindSettler helped me find the right therapist. Life-changing experience.",
-                  author: "James K.",
-                  role: "Verified Client",
-                },
-                {
-                  text: "Professional, caring, and always available. Highly recommend!",
-                  author: "Emily R.",
-                  role: "Verified Client",
-                },
-              ].map((item, i) => (
+                { value: "1000", suffix: "+", label: "Happy Clients" },
+                { value: "98", suffix: "%", label: "Satisfaction Rate" },
+                { value: "24", suffix: "h", label: "Avg Response Time" },
+              ].map((stat, i) => (
                 <motion.div
                   key={i}
+                  className="text-center"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.6 + i * 0.1, type: "spring" }}
+                  whileHover={{ scale: 1.1, y: -5 }}
+                >
+                  <motion.div
+                    className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-[#3F2965] to-[#DD1764] bg-clip-text text-transparent"
+                    animate={{
+                      backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                    }}
+                    transition={{ duration: 5, repeat: Infinity }}
+                    style={{ backgroundSize: "200% 200%" }}
+                  >
+                    <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                  </motion.div>
+                  <p className="text-xs sm:text-sm text-[#3F2965]/50 mt-1">
+                    {stat.label}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* === CTA SECTION === */}
+        <section className="relative py-16 sm:py-20 z-10 overflow-hidden">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative bg-gradient-to-br from-[#3F2965] to-[#5a3d8a] rounded-3xl sm:rounded-[40px] p-8 sm:p-12 lg:p-16 text-center text-white overflow-hidden"
+            >
+              {/* Animated background elements */}
+              <motion.div
+                className="absolute -top-20 -right-20 w-60 h-60 bg-[#DD1764]/20 rounded-full blur-3xl"
+                animate={{
+                  scale: [1, 1.3, 1],
+                  rotate: [0, 180, 360],
+                }}
+                transition={{ duration: 20, repeat: Infinity }}
+              />
+              <motion.div
+                className="absolute -bottom-20 -left-20 w-60 h-60 bg-white/10 rounded-full blur-3xl"
+                animate={{
+                  scale: [1.3, 1, 1.3],
+                  rotate: [360, 180, 0],
+                }}
+                transition={{ duration: 20, repeat: Infinity }}
+              />
+
+              {/* Floating particles */}
+              {[...Array(10)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 bg-white/20 rounded-full"
+                  style={{
+                    left: `${10 + i * 9}%`,
+                    top: `${20 + (i % 3) * 25}%`,
+                  }}
+                  animate={{
+                    y: [0, -20, 0],
+                    opacity: [0.2, 0.5, 0.2],
+                    scale: [1, 1.5, 1],
+                  }}
+                  transition={{
+                    duration: 3 + i * 0.5,
+                    repeat: Infinity,
+                    delay: i * 0.2,
+                  }}
+                />
+              ))}
+
+              {/* Content */}
+              <div className="relative">
+                <motion.div
+                  animate={{
+                    rotate: [0, 5, -5, 0],
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="inline-block mb-4"
+                >
+                  <Sparkles size={32} className="text-yellow-300" />
+                </motion.div>
+
+                <TextReveal>
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
+                    Ready to Start Your Journey?
+                  </h2>
+                </TextReveal>
+
+                <motion.p
+                  className="text-white/70 text-sm sm:text-base max-w-lg mx-auto mb-8"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-white/80 backdrop-blur-sm p-5 sm:p-6 rounded-2xl border border-white/50 shadow-lg"
+                  transition={{ delay: 0.3 }}
                 >
-                  {/* Stars */}
-                  <div className="flex gap-1 mb-3">
-                    {[...Array(5)].map((_, j) => (
-                      <Star
-                        key={j}
-                        size={14}
-                        className="text-yellow-400 fill-yellow-400"
-                      />
-                    ))}
-                  </div>
-                  <p className="text-sm text-[#3F2965]/70 italic mb-4 leading-relaxed">
-                    "{item.text}"
-                  </p>
-                  <div>
-                    <p className="font-bold text-sm text-[#3F2965]">
-                      {item.author}
-                    </p>
-                    <p className="text-xs text-[#DD1764]">{item.role}</p>
-                  </div>
+                  Take the first step towards better mental wellness. Our team
+                  is here to support you every step of the way.
+                </motion.p>
+
+                <motion.div
+                  className="flex flex-col sm:flex-row gap-4 justify-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <MagneticButton
+                    onClick={() =>
+                      formRef.current?.scrollIntoView({ behavior: "smooth" })
+                    }
+                    className="relative px-8 py-4 bg-white text-[#3F2965] font-bold rounded-full overflow-hidden group"
+                  >
+                    <motion.span className="absolute inset-0 bg-gradient-to-r from-[#DD1764]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="relative flex items-center gap-2">
+                      Send a Message
+                      <motion.span
+                        animate={{ x: [0, 5, 0] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        →
+                      </motion.span>
+                    </span>
+                  </MagneticButton>
+
+                  <MagneticButton
+                    onClick={() =>
+                      window.open("https://wa.me/919974631313", "_blank")
+                    }
+                    className="relative px-8 py-4 bg-transparent border-2 border-white/50 text-white font-bold rounded-full overflow-hidden group hover:border-white transition-colors"
+                  >
+                    <motion.span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="relative flex items-center gap-2">
+                      <MessageCircle size={18} />
+                      WhatsApp Us
+                    </span>
+                  </MagneticButton>
                 </motion.div>
-              ))}
-            </div>
+
+                {/* Trust badges */}
+                <motion.div
+                  className="mt-8 flex flex-wrap justify-center gap-4 sm:gap-6"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.7 }}
+                >
+                  {[
+                    { icon: "🔒", text: "100% Confidential" },
+                    { icon: "💜", text: "Professional Support" },
+                    { icon: "⚡", text: "Quick Response" },
+                  ].map((badge, i) => (
+                    <motion.div
+                      key={i}
+                      className="flex items-center gap-2 text-white/60 text-xs sm:text-sm"
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.8 + i * 0.1 }}
+                      whileHover={{
+                        scale: 1.05,
+                        color: "rgba(255,255,255,0.9)",
+                      }}
+                    >
+                      <motion.span
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          delay: i * 0.3,
+                        }}
+                      >
+                        {badge.icon}
+                      </motion.span>
+                      <span>{badge.text}</span>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </div>
+            </motion.div>
           </div>
         </section>
       </div>

@@ -1,5 +1,13 @@
-import { useState, useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  AnimatePresence,
+  useSpring,
+  useMotionValue,
+  useInView,
+} from "framer-motion";
 import {
   Search,
   BookOpen,
@@ -15,18 +23,724 @@ import {
   Smile,
   Lightbulb,
   Target,
+  Sparkles,
+  Filter,
+  X,
+  ChevronDown,
+  Eye,
+  Share2,
+  ArrowUpRight,
 } from "lucide-react";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import { useAuth } from "../context/AuthContext";
-import { IsLoginUser, IsVerifiedUser, IsProfileCompleteUser } from "../components/auth/Verification";
+import {
+  IsLoginUser,
+  IsVerifiedUser,
+  IsProfileCompleteUser,
+} from "../components/auth/Verification";
 
+// ============== CUSTOM HOOKS ==============
+
+// Custom Hook for Mouse Position
+const useMousePosition = () => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const updateMousePosition = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", updateMousePosition);
+    return () => window.removeEventListener("mousemove", updateMousePosition);
+  }, []);
+
+  return mousePosition;
+};
+
+// ============== ANIMATION COMPONENTS ==============
+
+// Custom Cursor Component
+const CustomCursor = () => {
+  const mousePosition = useMousePosition();
+  const [isHovering, setIsHovering] = useState(false);
+  const cursorX = useSpring(mousePosition.x, { stiffness: 500, damping: 28 });
+  const cursorY = useSpring(mousePosition.y, { stiffness: 500, damping: 28 });
+
+  useEffect(() => {
+    const handleMouseOver = (e) => {
+      if (e.target.closest("button, a, input, [data-hover]")) {
+        setIsHovering(true);
+      } else {
+        setIsHovering(false);
+      }
+    };
+    window.addEventListener("mouseover", handleMouseOver);
+    return () => window.removeEventListener("mouseover", handleMouseOver);
+  }, []);
+
+  return (
+    <>
+      <motion.div
+        className="fixed w-4 h-4 bg-[#Dd1764] rounded-full pointer-events-none z-[9999] mix-blend-difference hidden lg:block"
+        style={{
+          x: cursorX,
+          y: cursorY,
+          translateX: "-50%",
+          translateY: "-50%",
+        }}
+        animate={{
+          scale: isHovering ? 2.5 : 1,
+          opacity: isHovering ? 0.5 : 1,
+        }}
+        transition={{ duration: 0.2 }}
+      />
+      <motion.div
+        className="fixed w-10 h-10 border-2 border-[#3F2965] rounded-full pointer-events-none z-[9999] mix-blend-difference hidden lg:block"
+        style={{
+          x: cursorX,
+          y: cursorY,
+          translateX: "-50%",
+          translateY: "-50%",
+        }}
+        animate={{
+          scale: isHovering ? 1.5 : 1,
+          opacity: isHovering ? 0 : 1,
+        }}
+        transition={{ duration: 0.2 }}
+      />
+    </>
+  );
+};
+
+// Scroll Progress Indicator
+const ScrollProgress = () => {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  });
+
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3F2965] via-[#7c3aed] to-[#Dd1764] z-50 origin-left"
+      style={{ scaleX }}
+    />
+  );
+};
+
+// Magnetic Button Component
+const MagneticButton = ({ children, className, onClick, href, target }) => {
+  const ref = useRef(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouse = (e) => {
+    const { clientX, clientY } = e;
+    const { height, width, left, top } = ref.current.getBoundingClientRect();
+    const middleX = clientX - (left + width / 2);
+    const middleY = clientY - (top + height / 2);
+    setPosition({ x: middleX * 0.1, y: middleY * 0.1 });
+  };
+
+  const reset = () => setPosition({ x: 0, y: 0 });
+
+  const Component = href ? motion.a : motion.button;
+
+  return (
+    <Component
+      ref={ref}
+      href={href}
+      target={target}
+      onMouseMove={handleMouse}
+      onMouseLeave={reset}
+      onClick={onClick}
+      animate={{ x: position.x, y: position.y }}
+      transition={{ type: "spring", stiffness: 350, damping: 15, mass: 0.5 }}
+      className={className}
+      data-hover
+    >
+      {children}
+    </Component>
+  );
+};
+
+// Text Reveal Animation Component
+const TextReveal = ({ children, delay = 0 }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+
+  return (
+    <div ref={ref} className="overflow-hidden">
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={isInView ? { y: 0 } : { y: "100%" }}
+        transition={{
+          duration: 0.8,
+          ease: [0.33, 1, 0.68, 1],
+          delay,
+        }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+};
+
+// Staggered Text Animation
+const StaggerText = ({ text, className, delay = 0 }) => {
+  const words = text.split(" ");
+
+  const container = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05, delayChildren: delay },
+    },
+  };
+
+  const child = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        damping: 12,
+        stiffness: 100,
+      },
+    },
+  };
+
+  return (
+    <motion.div
+      className={className}
+      variants={container}
+      initial="hidden"
+      animate="visible"
+    >
+      {words.map((word, index) => (
+        <motion.span key={index} variants={child} className="inline-block mr-2">
+          {word}
+        </motion.span>
+      ))}
+    </motion.div>
+  );
+};
+
+// Animated Counter Component
+const AnimatedCounter = ({ value, suffix = "", duration = 2 }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    if (isInView) {
+      let start = 0;
+      const end = parseInt(value);
+      const incrementTime = Math.max((duration * 1000) / end, 20);
+
+      const counter = setInterval(() => {
+        start += Math.ceil(end / 50);
+        if (start >= end) {
+          setDisplayValue(end);
+          clearInterval(counter);
+        } else {
+          setDisplayValue(start);
+        }
+      }, incrementTime);
+
+      return () => clearInterval(counter);
+    }
+  }, [isInView, value, duration]);
+
+  return (
+    <span ref={ref}>
+      {displayValue}
+      {suffix}
+    </span>
+  );
+};
+
+// Floating Particles Component
+const FloatingParticles = () => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width: 4 + Math.random() * 8,
+            height: 4 + Math.random() * 8,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            background:
+              i % 2 === 0 ? "rgba(221,23,100,0.3)" : "rgba(63,41,101,0.3)",
+          }}
+          animate={{
+            y: [0, -30, 0],
+            x: [0, Math.random() * 20 - 10, 0],
+            scale: [1, 1.5, 1],
+            opacity: [0.2, 0.6, 0.2],
+          }}
+          transition={{
+            duration: 4 + Math.random() * 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: Math.random() * 2,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Glowing Card Component
+const GlowingCard = ({ children, className, color = "purple" }) => {
+  const ref = useRef(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const handleMouseMove = useCallback(
+    (e) => {
+      const rect = ref.current?.getBoundingClientRect();
+      if (rect) {
+        mouseX.set(e.clientX - rect.left);
+        mouseY.set(e.clientY - rect.top);
+      }
+    },
+    [mouseX, mouseY]
+  );
+
+  return (
+    <motion.div
+      ref={ref}
+      className={`relative group ${className}`}
+      onMouseMove={handleMouseMove}
+    >
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition duration-300"
+        style={{
+          background: useTransform(
+            [mouseX, mouseY],
+            ([x, y]) =>
+              `radial-gradient(400px circle at ${x}px ${y}px, ${
+                color === "pink"
+                  ? "rgba(221,23,100,0.15)"
+                  : "rgba(63,41,101,0.15)"
+              }, transparent 40%)`
+          ),
+        }}
+      />
+      {children}
+    </motion.div>
+  );
+};
+
+// Category Button with Enhanced Animation
+const CategoryButton = ({ category, isActive, onClick, index }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.button
+      onClick={onClick}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, type: "spring", stiffness: 200 }}
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className={`relative flex items-center gap-2 px-5 py-3 rounded-full whitespace-nowrap transition-all overflow-hidden ${
+        isActive
+          ? "text-white shadow-lg"
+          : "bg-white text-[#3F2965] hover:bg-[#3F2965]/5 border border-[#3F2965]/10"
+      }`}
+      data-hover
+    >
+      {/* Active background gradient */}
+      {isActive && (
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-[#3F2965] to-[#Dd1764]"
+          layoutId="activeCategoryBg"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        />
+      )}
+
+      {/* Shimmer effect on hover */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+        initial={{ x: "-100%" }}
+        animate={{ x: isHovered ? "100%" : "-100%" }}
+        transition={{ duration: 0.6 }}
+      />
+
+      <motion.div
+        className="relative z-10"
+        animate={isHovered ? { rotate: [0, -10, 10, 0] } : {}}
+        transition={{ duration: 0.5 }}
+      >
+        <category.icon className="w-4 h-4" />
+      </motion.div>
+      <span className="font-medium text-sm relative z-10">{category.name}</span>
+      <motion.span
+        className={`relative z-10 text-xs px-2 py-0.5 rounded-full ${
+          isActive ? "bg-white/20" : "bg-[#3F2965]/10"
+        }`}
+        animate={isActive ? { scale: [1, 1.1, 1] } : {}}
+        transition={{ duration: 0.3 }}
+      >
+        {category.count}
+      </motion.span>
+    </motion.button>
+  );
+};
+
+// Enhanced Article Card Component
+const ArticleCard = ({
+  article,
+  index,
+  featured = false,
+  onLike,
+  onSave,
+  isLiked,
+  isSaved,
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const cardRef = useRef(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const rotateX = useTransform(mouseY, [-150, 150], [5, -5]);
+  const rotateY = useTransform(mouseX, [-150, 150], [-5, 5]);
+
+  const handleMouseMove = (e) => {
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (rect) {
+      mouseX.set(e.clientX - rect.left - rect.width / 2);
+      mouseY.set(e.clientY - rect.top - rect.height / 2);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+    setIsHovered(false);
+  };
+
+  return (
+    <motion.article
+      ref={cardRef}
+      initial={{ opacity: 0, y: 50, rotateX: 10 }}
+      whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateX: isHovered ? rotateX : 0,
+        rotateY: isHovered ? rotateY : 0,
+        transformStyle: "preserve-3d",
+        perspective: 1000,
+      }}
+      className={`group relative bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-500 ${
+        featured ? "md:col-span-2 md:row-span-2" : ""
+      }`}
+    >
+      {/* Glowing border on hover */}
+      <motion.div className="absolute -inset-0.5 bg-gradient-to-r from-[#3F2965] to-[#Dd1764] rounded-3xl opacity-0 group-hover:opacity-30 blur-sm transition-opacity duration-500" />
+
+      <div className="relative bg-white rounded-3xl overflow-hidden">
+        {/* Image */}
+        <div
+          className={`relative overflow-hidden ${
+            featured ? "h-64 md:h-80" : "h-48"
+          }`}
+        >
+          <motion.img
+            src={article.image}
+            alt={article.title}
+            className="w-full h-full object-cover"
+            animate={{ scale: isHovered ? 1.1 : 1 }}
+            transition={{ duration: 0.6 }}
+          />
+
+          {/* Overlay with gradient */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"
+            animate={{ opacity: isHovered ? 1 : 0.8 }}
+          />
+
+          {/* Floating particles on hover */}
+          <AnimatePresence>
+            {isHovered && (
+              <>
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-2 h-2 bg-white/60 rounded-full"
+                    initial={{
+                      x: "50%",
+                      y: "100%",
+                      opacity: 0,
+                    }}
+                    animate={{
+                      y: `${20 + i * 15}%`,
+                      x: `${30 + i * 10}%`,
+                      opacity: [0, 1, 0],
+                    }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      duration: 1,
+                      delay: i * 0.1,
+                      ease: "easeOut",
+                    }}
+                  />
+                ))}
+              </>
+            )}
+          </AnimatePresence>
+
+          {/* Category Badge */}
+          <motion.div
+            className="absolute top-4 left-4"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 + 0.2 }}
+          >
+            <motion.span
+              className="px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-[#3F2965] capitalize shadow-lg"
+              whileHover={{ scale: 1.05 }}
+            >
+              {article.category.replace("-", " ")}
+            </motion.span>
+          </motion.div>
+
+          {/* Actions */}
+          <motion.div
+            className="absolute top-4 right-4 flex gap-2"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 + 0.3 }}
+          >
+            <motion.button
+              onClick={(e) => {
+                e.preventDefault();
+                onLike(article.id);
+              }}
+              whileHover={{ scale: 1.15, rotate: isLiked ? 0 : 10 }}
+              whileTap={{ scale: 0.9 }}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                isLiked
+                  ? "bg-[#Dd1764] text-white"
+                  : "bg-white/95 backdrop-blur-sm text-gray-600 hover:text-[#Dd1764]"
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
+            </motion.button>
+            <motion.button
+              onClick={(e) => {
+                e.preventDefault();
+                onSave(article.id);
+              }}
+              whileHover={{ scale: 1.15, rotate: isSaved ? 0 : -10 }}
+              whileTap={{ scale: 0.9 }}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                isSaved
+                  ? "bg-[#3F2965] text-white"
+                  : "bg-white/95 backdrop-blur-sm text-gray-600 hover:text-[#3F2965]"
+              }`}
+            >
+              <Bookmark
+                className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`}
+              />
+            </motion.button>
+          </motion.div>
+
+          {/* Source & Read Time */}
+          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white text-sm">
+            <motion.span
+              className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full"
+              whileHover={{ scale: 1.05 }}
+            >
+              <ExternalLink className="w-3 h-3" />
+              {article.source}
+            </motion.span>
+            <motion.span
+              className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full"
+              whileHover={{ scale: 1.05 }}
+            >
+              <Clock className="w-3 h-3" />
+              {article.readTime}
+            </motion.span>
+          </div>
+
+          {/* Featured Badge */}
+          {article.featured && (
+            <motion.div
+              className="absolute top-4 left-4 z-10"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", delay: 0.3 }}
+            >
+              <motion.div
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#3F2965] to-[#Dd1764] text-white text-xs font-bold rounded-full shadow-lg"
+                animate={{
+                  boxShadow: [
+                    "0 0 0 0 rgba(221,23,100,0.4)",
+                    "0 0 0 8px rgba(221,23,100,0)",
+                    "0 0 0 0 rgba(221,23,100,0)",
+                  ],
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Star className="w-3 h-3 fill-current" />
+                Featured
+              </motion.div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <motion.h3
+            className={`font-bold text-[#3F2965] mb-3 line-clamp-2 transition-colors ${
+              featured ? "text-xl md:text-2xl" : "text-lg"
+            }`}
+            animate={{ color: isHovered ? "#Dd1764" : "#3F2965" }}
+            transition={{ duration: 0.3 }}
+          >
+            {article.title}
+          </motion.h3>
+
+          <p
+            className={`text-gray-600 mb-4 line-clamp-2 ${
+              featured ? "text-base" : "text-sm"
+            }`}
+          >
+            {article.excerpt}
+          </p>
+
+          {/* Tags with animation */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {article.tags.slice(0, 3).map((tag, i) => (
+              <motion.span
+                key={i}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{
+                  scale: 1.1,
+                  backgroundColor: "rgba(63,41,101,0.1)",
+                }}
+                className="px-2.5 py-1 bg-[#3F2965]/5 text-[#3F2965] text-xs rounded-full cursor-pointer transition-colors"
+              >
+                #{tag}
+              </motion.span>
+            ))}
+          </div>
+
+          {/* Read More Link */}
+          <motion.a
+            href={article.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-[#Dd1764] font-semibold text-sm group/link"
+            whileHover={{ x: 5 }}
+            data-hover
+          >
+            Read Full Article
+            <motion.span
+              animate={{ x: isHovered ? [0, 5, 0] : 0 }}
+              transition={{ duration: 1, repeat: isHovered ? Infinity : 0 }}
+            >
+              <ArrowUpRight className="w-4 h-4" />
+            </motion.span>
+          </motion.a>
+        </div>
+      </div>
+    </motion.article>
+  );
+};
+
+// Stats Card Component
+const StatsCard = ({ icon: Icon, value, label, delay }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, type: "spring", stiffness: 100 }}
+      whileHover={{ scale: 1.05, y: -5 }}
+      className="flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/50"
+    >
+      <motion.div
+        className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#3F2965]/10 to-[#Dd1764]/10 flex items-center justify-center"
+        animate={{ rotate: [0, 5, -5, 0] }}
+        transition={{ duration: 4, repeat: Infinity }}
+      >
+        <Icon className="w-6 h-6 text-[#Dd1764]" />
+      </motion.div>
+      <div>
+        <motion.p className="text-2xl font-bold bg-gradient-to-r from-[#3F2965] to-[#Dd1764] bg-clip-text text-transparent">
+          <AnimatedCounter value={value} suffix="+" />
+        </motion.p>
+        <p className="text-sm text-[#3F2965]/60">{label}</p>
+      </div>
+    </motion.div>
+  );
+};
+
+// Empty State Component
+const EmptyState = ({ onClear }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="text-center py-20"
+    >
+      <motion.div
+        className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#3F2965]/10 to-[#Dd1764]/10 flex items-center justify-center"
+        animate={{
+          scale: [1, 1.1, 1],
+          rotate: [0, 5, -5, 0],
+        }}
+        transition={{ duration: 3, repeat: Infinity }}
+      >
+        <Search className="w-12 h-12 text-[#3F2965]/40" />
+      </motion.div>
+      <TextReveal>
+        <h3 className="text-2xl font-bold text-[#3F2965] mb-3">
+          No articles found
+        </h3>
+      </TextReveal>
+      <motion.p
+        className="text-[#3F2965]/60 mb-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
+        Try adjusting your search or filter criteria
+      </motion.p>
+      <MagneticButton
+        onClick={onClear}
+        className="px-6 py-3 bg-gradient-to-r from-[#3F2965] to-[#Dd1764] text-white font-bold rounded-full shadow-lg overflow-hidden group relative"
+      >
+        <motion.span className="absolute inset-0 bg-gradient-to-r from-[#Dd1764] to-[#3F2965] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <span className="relative">Clear Filters</span>
+      </MagneticButton>
+    </motion.div>
+  );
+};
+
+// Main Resources Page Component
 const ResourcesPage = () => {
   const containerRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [savedArticles, setSavedArticles] = useState([]);
   const [likedArticles, setLikedArticles] = useState([]);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const { user } = useAuth();
 
   const { scrollYProgress } = useScroll({
@@ -35,6 +749,20 @@ const ResourcesPage = () => {
   });
 
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
+
+  // Show/hide scroll to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 500);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Categories
   const categories = [
@@ -46,9 +774,8 @@ const ResourcesPage = () => {
     { id: "mindfulness", name: "Mindfulness", icon: Target, count: 4 },
   ];
 
-  // Curated Articles & Blogs
+  // Articles data (keeping your existing data)
   const articles = [
-    // Anxiety & Stress
     {
       id: 1,
       title: "Understanding Anxiety: Causes, Symptoms, and Coping Strategies",
@@ -144,8 +871,6 @@ const ResourcesPage = () => {
         "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=800",
       tags: ["Work Stress", "Boundaries", "Productivity"],
     },
-
-    // Depression
     {
       id: 7,
       title: "Depression: What You Need to Know",
@@ -225,8 +950,6 @@ const ResourcesPage = () => {
         "https://images.unsplash.com/photo-1516912481808-3406841bd33c?w=800",
       tags: ["SAD", "Light Therapy", "Seasonal"],
     },
-
-    // Relationships
     {
       id: 12,
       title: "Building Healthy Communication in Relationships",
@@ -289,8 +1012,6 @@ const ResourcesPage = () => {
         "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800",
       tags: ["Conflict", "Resolution", "Communication"],
     },
-
-    // Self-Care
     {
       id: 16,
       title: "The Science of Self-Care: Why It Matters for Mental Health",
@@ -366,8 +1087,6 @@ const ResourcesPage = () => {
         "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800",
       tags: ["Sleep", "Rest", "Health"],
     },
-
-    // Mindfulness
     {
       id: 21,
       title: "Getting Started with Mindfulness Meditation",
@@ -467,156 +1186,18 @@ const ResourcesPage = () => {
     );
   };
 
-  // Article Card Component
-  const ArticleCard = ({ article, index, featured = false }) => (
-    <motion.article
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.1 }}
-      className={`group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 ${
-        featured ? "md:col-span-2 md:row-span-2" : ""
-      }`}
-    >
-      {/* Image */}
-      <div
-        className={`relative overflow-hidden ${
-          featured ? "h-64 md:h-80" : "h-48"
-        }`}
-      >
-        <motion.img
-          src={article.image}
-          alt={article.title}
-          className="w-full h-full object-cover"
-          whileHover={{ scale: 1.05 }}
-          transition={{ duration: 0.5 }}
-        />
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
-        {/* Category Badge */}
-        <div className="absolute top-4 left-4">
-          <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold text-[#3F2965] capitalize">
-            {article.category.replace("-", " ")}
-          </span>
-        </div>
-
-        {/* Actions */}
-        <div className="absolute top-4 right-4 flex gap-2">
-          <motion.button
-            onClick={() => toggleLike(article.id)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-              likedArticles.includes(article.id)
-                ? "bg-[#Dd1764] text-white"
-                : "bg-white/90 backdrop-blur-sm text-gray-600 hover:text-[#Dd1764]"
-            }`}
-          >
-            <Heart
-              className={`w-4 h-4 ${
-                likedArticles.includes(article.id) ? "fill-current" : ""
-              }`}
-            />
-          </motion.button>
-          <motion.button
-            onClick={() => toggleSave(article.id)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-              savedArticles.includes(article.id)
-                ? "bg-[#3F2965] text-white"
-                : "bg-white/90 backdrop-blur-sm text-gray-600 hover:text-[#3F2965]"
-            }`}
-          >
-            <Bookmark
-              className={`w-4 h-4 ${
-                savedArticles.includes(article.id) ? "fill-current" : ""
-              }`}
-            />
-          </motion.button>
-        </div>
-
-        {/* Source & Read Time */}
-        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white text-sm">
-          <span className="flex items-center gap-1">
-            <ExternalLink className="w-3 h-3" />
-            {article.source}
-          </span>
-          <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {article.readTime}
-          </span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-6">
-        <h3
-          className={`font-bold text-[#3F2965] mb-3 group-hover:text-[#Dd1764] transition-colors line-clamp-2 ${
-            featured ? "text-xl md:text-2xl" : "text-lg"
-          }`}
-        >
-          {article.title}
-        </h3>
-        <p
-          className={`text-gray-600 mb-4 line-clamp-2 ${
-            featured ? "text-base" : "text-sm"
-          }`}
-        >
-          {article.excerpt}
-        </p>
-
-        {/* Tags */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {article.tags.slice(0, 3).map((tag, i) => (
-            <span
-              key={i}
-              className="px-2 py-1 bg-[#3F2965]/5 text-[#3F2965] text-xs rounded-full"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-
-        {/* Read More Link */}
-        <motion.a
-          href={article.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-[#Dd1764] font-semibold text-sm group/link"
-          whileHover={{ x: 5 }}
-        >
-          Read Full Article
-          <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
-        </motion.a>
-      </div>
-
-      {/* Featured Badge */}
-      {article.featured && (
-        <div className="absolute top-4 left-4 z-10">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-[#3F2965] to-[#Dd1764] text-white text-xs font-bold rounded-full"
-          >
-            <Star className="w-3 h-3 fill-current" />
-            Featured
-          </motion.div>
-        </div>
-      )}
-    </motion.article>
-  );
-
   return (
     <IsLoginUser user={user}>
       <IsVerifiedUser user={user}>
         <IsProfileCompleteUser user={user}>
           <>
+            <CustomCursor />
+            <ScrollProgress />
             <Navbar />
+
             <div ref={containerRef} className="min-h-screen overflow-hidden">
               {/* Hero Section */}
-              <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+              <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
                 {/* Animated Background */}
                 <motion.div
                   className="absolute inset-0 z-0"
@@ -626,364 +1207,914 @@ const ResourcesPage = () => {
                     className="absolute inset-0"
                     style={{
                       background: `
-                  radial-gradient(ellipse at 20% 20%, rgba(63,41,101,0.15) 0%, transparent 50%),
-                  radial-gradient(ellipse at 80% 80%, rgba(221,23,100,0.1) 0%, transparent 50%),
-                  radial-gradient(ellipse at 50% 50%, rgba(124,58,237,0.08) 0%, transparent 70%),
-                  linear-gradient(135deg, #faf5ff 0%, #f3e8ff 25%, #fce7f3 50%, #fdf2f8 75%, #f5f3ff 100%)
-                `,
+                        radial-gradient(ellipse at 20% 20%, rgba(63,41,101,0.15) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 80%, rgba(221,23,100,0.1) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 50%, rgba(124,58,237,0.08) 0%, transparent 70%),
+                        linear-gradient(135deg, #faf5ff 0%, #f3e8ff 25%, #fce7f3 50%, #fdf2f8 75%, #f5f3ff 100%)
+                      `,
                     }}
                   />
 
-                  {/* Floating Elements */}
-                  {[...Array(8)].map((_, i) => (
+                  {/* Floating Elements with Enhanced Animation */}
+                  {[...Array(10)].map((_, i) => (
                     <motion.div
                       key={i}
-                      className="absolute rounded-full bg-gradient-to-br from-[#3F2965]/10 to-[#Dd1764]/10"
+                      className="absolute rounded-full"
                       style={{
-                        width: `${60 + i * 30}px`,
-                        height: `${60 + i * 30}px`,
-                        left: `${10 + i * 12}%`,
-                        top: `${15 + (i % 4) * 20}%`,
+                        background: `linear-gradient(135deg, rgba(63,41,101,${
+                          0.1 + i * 0.02
+                        }), rgba(221,23,100,${0.1 + i * 0.02}))`,
+                        width: `${50 + i * 25}px`,
+                        height: `${50 + i * 25}px`,
+                        left: `${5 + i * 10}%`,
+                        top: `${10 + (i % 5) * 18}%`,
+                        filter: "blur(1px)",
                       }}
                       animate={{
-                        y: [0, -20, 0],
-                        scale: [1, 1.05, 1],
+                        y: [0, -30, 0],
+                        x: [0, i % 2 === 0 ? 15 : -15, 0],
+                        scale: [1, 1.1, 1],
                         opacity: [0.3, 0.6, 0.3],
+                        rotate: [0, 180, 360],
                       }}
                       transition={{
-                        duration: 4 + i,
+                        duration: 6 + i,
                         repeat: Infinity,
                         ease: "easeInOut",
                         delay: i * 0.3,
                       }}
                     />
                   ))}
+
+                  <FloatingParticles />
                 </motion.div>
 
                 {/* Hero Content */}
                 <div className="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-16 text-center">
-                  {/* Title */}
-                  <motion.h1
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                    className="text-5xl md:text-7xl font-serif font-bold mb-6"
-                  >
-                    <span className="text-[#3F2965]">Blogs & </span>
-                    <span className="italic bg-gradient-to-r from-[#Dd1764] via-[#7c3aed] to-[#3F2965] bg-clip-text text-transparent">
-                      Articles
-                    </span>
-                  </motion.h1>
-
-                  {/* Subtitle */}
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className="text-[#3F2965]/70 text-lg md:text-xl max-w-2xl mx-auto mb-10"
-                  >
-                    Curated mental health resources from trusted sources to
-                    support your wellness journey
-                  </motion.p>
-
-                  {/* Stats */}
-                  {/* <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="flex flex-wrap justify-center gap-8 mt-10"
-            >
-              {[
-                { label: "Articles", value: "24+", icon: BookOpen },
-                { label: "Categories", value: "5", icon: Filter },
-                { label: "Trusted Sources", value: "12+", icon: Shield },
-              ].map((stat, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/80 flex items-center justify-center">
-                    <stat.icon className="w-5 h-5 text-[#Dd1764]" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-2xl font-bold text-[#3F2965]">{stat.value}</p>
-                    <p className="text-sm text-[#3F2965]/60">{stat.label}</p>
-                  </div>
-                </div>
-              ))}
-            </motion.div> */}
-                </div>
-              </section>
-
-              {/* Categories Section */}
-              <section className="py-8 bg-white/50 backdrop-blur-sm sticky top-0 z-30 border-b border-[#3F2965]/10">
-                <div className="max-w-7xl mx-auto px-6">
-                  <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                    {categories.map((category, index) => (
-                      <motion.button
-                        key={category.id}
-                        onClick={() => setActiveCategory(category.id)}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`flex items-center gap-2 px-5 py-3 rounded-full whitespace-nowrap transition-all ${
-                          activeCategory === category.id
-                            ? "bg-gradient-to-r from-[#3F2965] to-[#Dd1764] text-white shadow-lg"
-                            : "bg-white text-[#3F2965] hover:bg-[#3F2965]/5 border border-[#3F2965]/10"
-                        }`}
-                      >
-                        <category.icon className="w-4 h-4" />
-                        <span className="font-medium text-sm">
-                          {category.name}
-                        </span>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${
-                            activeCategory === category.id
-                              ? "bg-white/20"
-                              : "bg-[#3F2965]/10"
-                          }`}
-                        >
-                          {category.count}
-                        </span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              {/* Featured Articles */}
-              <section className="py-16 bg-gradient-to-b from-[#faf5ff] to-white">
-                <div className="max-w-7xl mx-auto px-6">
-                  {/* Section Header */}
+                  {/* Badge */}
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="flex items-center justify-between mb-10"
+                    initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200 }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-white/50 mb-6"
                   >
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="w-5 h-5 text-[#Dd1764]" />
-                        <span className="text-[#Dd1764] font-bold tracking-wider uppercase text-sm">
-                          Featured
-                        </span>
-                      </div>
-                      <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#3F2965]">
-                        Editor's{" "}
-                        <span className="italic text-[#Dd1764]">Picks</span>
-                      </h2>
-                    </div>
+                    <motion.div
+                      animate={{ rotate: [0, 360] }}
+                      transition={{
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    >
+                      <BookOpen size={16} className="text-[#Dd1764]" />
+                    </motion.div>
+                    <span className="text-xs sm:text-sm font-semibold text-[#3F2965]">
+                      Curated Mental Health Resources
+                    </span>
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <Sparkles size={14} className="text-yellow-500" />
+                    </motion.div>
                   </motion.div>
 
-                  {/* Featured Grid */}
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {featuredArticles.slice(0, 3).map((article, index) => (
-                      <ArticleCard
-                        key={article.id}
-                        article={article}
+                  {/* Title */}
+                  <div className="overflow-hidden mb-6">
+                    <motion.h1
+                      initial={{ y: 100 }}
+                      animate={{ y: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 50,
+                        damping: 20,
+                      }}
+                      className="text-5xl md:text-7xl font-serif font-bold"
+                    >
+                      <motion.span
+                        className="text-[#3F2965] inline-block"
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        Blogs &{" "}
+                      </motion.span>
+                      <motion.span
+                        className="italic bg-gradient-to-r from-[#Dd1764] via-[#7c3aed] to-[#3F2965] bg-clip-text text-transparent inline-block"
+                        animate={{
+                          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                        }}
+                        transition={{ duration: 5, repeat: Infinity }}
+                        style={{ backgroundSize: "200% 200%" }}
+                      >
+                        Articles
+                      </motion.span>
+                    </motion.h1>
+                  </div>
+
+                  {/* Subtitle */}
+                  <StaggerText
+                    text="Curated mental health resources from trusted sources to support your wellness journey"
+                    className="text-[#3F2965]/70 text-lg md:text-xl max-w-2xl mx-auto mb-10"
+                    delay={0.3}
+                  />
+
+                  {/* Stats */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 }}
+                    className="flex flex-wrap justify-center gap-4 md:gap-6"
+                  >
+                    <StatsCard
+                      icon={BookOpen}
+                      value="24"
+                      label="Articles"
+                      delay={0.9}
+                    />
+                    <StatsCard
+                      icon={Filter}
+                      value="5"
+                      label="Categories"
+                      delay={1.0}
+                    />
+                    <StatsCard
+                      icon={Star}
+                      value="12"
+                      label="Trusted Sources"
+                      delay={1.1}
+                    />
+                  </motion.div>
+                </div>
+              </section>
+
+              {/* Categories Section - Sticky */}
+              <section className="py-6 bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-[#3F2965]/10 shadow-sm">
+                <div className="max-w-7xl mx-auto px-6">
+                  <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    {categories.map((category, index) => (
+                      <CategoryButton
+                        key={category.id}
+                        category={category}
+                        isActive={activeCategory === category.id}
+                        onClick={() => setActiveCategory(category.id)}
                         index={index}
-                        featured={index === 0}
                       />
                     ))}
                   </div>
                 </div>
               </section>
 
-              {/* All Articles */}
-              <section className="py-16 bg-white">
-                <div className="max-w-7xl mx-auto px-6">
+              {/* Featured Articles */}
+              <section className="py-20 bg-gradient-to-b from-[#faf5ff] to-white relative overflow-hidden">
+                <FloatingParticles />
+
+                <div className="max-w-7xl mx-auto px-6 relative z-10">
                   {/* Section Header */}
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="flex items-center justify-between mb-10"
+                    className="flex items-center justify-between mb-12"
                   >
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <BookOpen className="w-5 h-5 text-[#Dd1764]" />
+                      <motion.div
+                        className="flex items-center gap-2 mb-3"
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                      >
+                        <motion.div
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          <TrendingUp className="w-5 h-5 text-[#Dd1764]" />
+                        </motion.div>
+                        <span className="text-[#Dd1764] font-bold tracking-wider uppercase text-sm">
+                          Featured
+                        </span>
+                      </motion.div>
+                      <TextReveal>
+                        <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#3F2965]">
+                          Editor's{" "}
+                          <motion.span
+                            className="italic text-[#Dd1764]"
+                            animate={{
+                              textShadow: [
+                                "0 0 0px rgba(221,23,100,0)",
+                                "0 0 20px rgba(221,23,100,0.3)",
+                                "0 0 0px rgba(221,23,100,0)",
+                              ],
+                            }}
+                            transition={{ duration: 3, repeat: Infinity }}
+                          >
+                            Picks
+                          </motion.span>
+                        </h2>
+                      </TextReveal>
+                    </div>
+                  </motion.div>
+
+                  {/* Featured Grid */}
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {featuredArticles.slice(0, 3).map((article, index) => (
+                      <ArticleCard
+                        key={article.id}
+                        article={article}
+                        index={index}
+                        featured={index === 0}
+                        onLike={toggleLike}
+                        onSave={toggleSave}
+                        isLiked={likedArticles.includes(article.id)}
+                        isSaved={savedArticles.includes(article.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </section>
+              {/* All Articles */}
+              <section className="py-20 bg-white relative">
+                <div className="max-w-7xl mx-auto px-6 relative z-10">
+                  {/* Section Header */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4"
+                  >
+                    <div>
+                      <motion.div
+                        className="flex items-center gap-2 mb-3"
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                      >
+                        <motion.div
+                          animate={{ rotate: [0, 360] }}
+                          transition={{
+                            duration: 8,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        >
+                          <BookOpen className="w-5 h-5 text-[#Dd1764]" />
+                        </motion.div>
                         <span className="text-[#Dd1764] font-bold tracking-wider uppercase text-sm">
                           All Resources
                         </span>
-                      </div>
-                      <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#3F2965]">
-                        Browse{" "}
-                        <span className="italic text-[#Dd1764]">
-                          {activeCategory === "all"
-                            ? "All Articles"
-                            : categories.find((c) => c.id === activeCategory)
-                                ?.name}
-                        </span>
-                      </h2>
+                      </motion.div>
+                      <TextReveal>
+                        <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#3F2965]">
+                          Browse{" "}
+                          <motion.span
+                            className="italic text-[#Dd1764]"
+                            animate={{
+                              color: ["#Dd1764", "#7c3aed", "#Dd1764"],
+                            }}
+                            transition={{ duration: 4, repeat: Infinity }}
+                          >
+                            {activeCategory === "all"
+                              ? "All Articles"
+                              : categories.find((c) => c.id === activeCategory)
+                                  ?.name}
+                          </motion.span>
+                        </h2>
+                      </TextReveal>
                     </div>
-                    <p className="text-[#3F2965]/60">
-                      {filteredArticles.length} article
-                      {filteredArticles.length !== 1 ? "s" : ""} found
-                    </p>
+
+                    {/* Results count with animation */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      className="flex items-center gap-3"
+                    >
+                      <motion.div
+                        className="px-4 py-2 bg-gradient-to-r from-[#3F2965]/5 to-[#Dd1764]/5 rounded-full"
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <motion.span
+                          className="text-[#3F2965] font-medium"
+                          key={filteredArticles.length}
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          {filteredArticles.length} article
+                          {filteredArticles.length !== 1 ? "s" : ""} found
+                        </motion.span>
+                      </motion.div>
+
+                      {/* View toggle (optional) */}
+                      <motion.div
+                        className="hidden md:flex items-center gap-2 px-3 py-2 bg-white rounded-full border border-[#3F2965]/10"
+                        whileHover={{ borderColor: "#Dd1764" }}
+                      >
+                        <motion.button
+                          className="p-1.5 rounded-md bg-[#3F2965]/10"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <svg
+                            className="w-4 h-4 text-[#3F2965]"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                          </svg>
+                        </motion.button>
+                      </motion.div>
+                    </motion.div>
                   </motion.div>
 
+                  {/* Active filters indicator */}
+                  <AnimatePresence>
+                    {(searchQuery || activeCategory !== "all") && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mb-8"
+                      >
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="text-sm text-[#3F2965]/60">
+                            Active filters:
+                          </span>
+
+                          {searchQuery && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              exit={{ scale: 0 }}
+                              className="flex items-center gap-2 px-3 py-1.5 bg-[#3F2965]/10 rounded-full"
+                            >
+                              <Search className="w-3 h-3 text-[#3F2965]" />
+                              <span className="text-sm text-[#3F2965] font-medium">
+                                "{searchQuery}"
+                              </span>
+                              <motion.button
+                                onClick={() => setSearchQuery("")}
+                                whileHover={{ scale: 1.2 }}
+                                whileTap={{ scale: 0.9 }}
+                                className="ml-1"
+                              >
+                                <X className="w-3 h-3 text-[#3F2965]/60 hover:text-[#Dd1764]" />
+                              </motion.button>
+                            </motion.div>
+                          )}
+
+                          {activeCategory !== "all" && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              exit={{ scale: 0 }}
+                              className="flex items-center gap-2 px-3 py-1.5 bg-[#Dd1764]/10 rounded-full"
+                            >
+                              <Filter className="w-3 h-3 text-[#Dd1764]" />
+                              <span className="text-sm text-[#Dd1764] font-medium capitalize">
+                                {activeCategory.replace("-", " ")}
+                              </span>
+                              <motion.button
+                                onClick={() => setActiveCategory("all")}
+                                whileHover={{ scale: 1.2 }}
+                                whileTap={{ scale: 0.9 }}
+                                className="ml-1"
+                              >
+                                <X className="w-3 h-3 text-[#Dd1764]/60 hover:text-[#Dd1764]" />
+                              </motion.button>
+                            </motion.div>
+                          )}
+
+                          <motion.button
+                            onClick={() => {
+                              setSearchQuery("");
+                              setActiveCategory("all");
+                            }}
+                            className="text-sm text-[#3F2965]/60 hover:text-[#Dd1764] underline transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            Clear all
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Articles Grid */}
-                  {filteredArticles.length > 0 ? (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {filteredArticles.map((article, index) => (
-                        <ArticleCard
-                          key={article.id}
-                          article={article}
-                          index={index}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-center py-20"
-                    >
-                      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#3F2965]/10 flex items-center justify-center">
-                        <Search className="w-10 h-10 text-[#3F2965]/40" />
-                      </div>
-                      <h3 className="text-2xl font-bold text-[#3F2965] mb-3">
-                        No articles found
-                      </h3>
-                      <p className="text-[#3F2965]/60 mb-6">
-                        Try adjusting your search or filter criteria
-                      </p>
-                      <motion.button
-                        onClick={() => {
+                  <AnimatePresence mode="wait">
+                    {filteredArticles.length > 0 ? (
+                      <motion.div
+                        key="articles-grid"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+                      >
+                        {filteredArticles.map((article, index) => (
+                          <ArticleCard
+                            key={article.id}
+                            article={article}
+                            index={index}
+                            onLike={toggleLike}
+                            onSave={toggleSave}
+                            isLiked={likedArticles.includes(article.id)}
+                            isSaved={savedArticles.includes(article.id)}
+                          />
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <EmptyState
+                        onClear={() => {
                           setSearchQuery("");
                           setActiveCategory("all");
                         }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="px-6 py-3 bg-gradient-to-r from-[#3F2965] to-[#Dd1764] text-white font-bold rounded-full"
+                      />
+                    )}
+                  </AnimatePresence>
+
+                  {/* Load More Button (Optional) */}
+                  {filteredArticles.length > 0 &&
+                    filteredArticles.length >= 6 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="mt-16 text-center"
                       >
-                        Clear Filters
-                      </motion.button>
-                    </motion.div>
-                  )}
+                        <MagneticButton className="group relative px-8 py-4 bg-white border-2 border-[#3F2965]/20 text-[#3F2965] font-bold rounded-full overflow-hidden hover:border-[#Dd1764]/50 transition-colors">
+                          <motion.span className="absolute inset-0 bg-gradient-to-r from-[#3F2965]/5 to-[#Dd1764]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <span className="relative flex items-center gap-2">
+                            Explore More Articles
+                            <motion.span
+                              animate={{ y: [0, 3, 0] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            >
+                              <ChevronDown className="w-5 h-5" />
+                            </motion.span>
+                          </span>
+                        </MagneticButton>
+                      </motion.div>
+                    )}
+                </div>
+
+                {/* Background decoration */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <motion.div
+                    className="absolute top-1/4 -right-32 w-64 h-64 bg-[#Dd1764]/5 rounded-full blur-3xl"
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                    transition={{ duration: 8, repeat: Infinity }}
+                  />
+                  <motion.div
+                    className="absolute bottom-1/4 -left-32 w-64 h-64 bg-[#3F2965]/5 rounded-full blur-3xl"
+                    animate={{ scale: [1.2, 1, 1.2], opacity: [0.3, 0.5, 0.3] }}
+                    transition={{ duration: 8, repeat: Infinity, delay: 4 }}
+                  />
                 </div>
               </section>
 
               {/* Resources CTA */}
-              <section className="py-20 relative overflow-hidden">
-                <div
+              <section className="py-24 relative overflow-hidden">
+                <motion.div
                   className="absolute inset-0"
                   style={{
                     background: `linear-gradient(135deg, #3F2965 0%, #5a3d7a 50%, #Dd1764 100%)`,
                   }}
                 />
 
-                {/* Decorative Elements */}
+                {/* Animated mesh background */}
                 <div className="absolute inset-0 overflow-hidden">
-                  <motion.div
-                    className="absolute top-10 left-10 w-64 h-64 bg-white/5 rounded-full blur-3xl"
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-                    transition={{ duration: 5, repeat: Infinity }}
-                  />
-                  <motion.div
-                    className="absolute bottom-10 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl"
-                    animate={{ scale: [1.2, 1, 1.2], opacity: [0.3, 0.5, 0.3] }}
-                    transition={{ duration: 5, repeat: Infinity, delay: 2.5 }}
-                  />
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute border border-white/10 rounded-full"
+                      style={{
+                        width: `${200 + i * 150}px`,
+                        height: `${200 + i * 150}px`,
+                        left: "50%",
+                        top: "50%",
+                        transform: "translate(-50%, -50%)",
+                      }}
+                      animate={{
+                        rotate: i % 2 === 0 ? [0, 360] : [360, 0],
+                        scale: [1, 1.1, 1],
+                      }}
+                      transition={{
+                        rotate: {
+                          duration: 20 + i * 5,
+                          repeat: Infinity,
+                          ease: "linear",
+                        },
+                        scale: { duration: 4 + i, repeat: Infinity },
+                      }}
+                    />
+                  ))}
                 </div>
+
+                {/* Floating particles */}
+                {[...Array(15)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-2 h-2 bg-white/20 rounded-full"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                    }}
+                    animate={{
+                      y: [0, -30, 0],
+                      opacity: [0.2, 0.6, 0.2],
+                      scale: [1, 1.5, 1],
+                    }}
+                    transition={{
+                      duration: 3 + Math.random() * 2,
+                      repeat: Infinity,
+                      delay: Math.random() * 2,
+                    }}
+                  />
+                ))}
 
                 <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
                   <motion.div
-                    initial={{ opacity: 0, y: 30 }}
+                    initial={{ opacity: 0, y: 40 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
+                    transition={{ type: "spring", stiffness: 50 }}
                   >
-                    <Lightbulb className="w-16 h-16 text-white/80 mx-auto mb-6" />
-                    <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-6">
-                      Need Personalized Support?
-                    </h2>
-                    <p className="text-white/80 text-lg mb-10 max-w-2xl mx-auto">
+                    {/* Icon */}
+                    <motion.div
+                      className="w-20 h-20 mx-auto mb-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center"
+                      animate={{
+                        rotate: [0, 10, -10, 0],
+                        scale: [1, 1.05, 1],
+                      }}
+                      transition={{ duration: 4, repeat: Infinity }}
+                    >
+                      <Lightbulb className="w-10 h-10 text-white" />
+                    </motion.div>
+
+                    {/* Title */}
+                    <TextReveal>
+                      <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-6">
+                        Need Personalized Support?
+                      </h2>
+                    </TextReveal>
+
+                    {/* Description */}
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.3 }}
+                      className="text-white/80 text-lg mb-10 max-w-2xl mx-auto leading-relaxed"
+                    >
                       While these resources are helpful, sometimes we need
                       personalized guidance. Book a session with our mental
                       wellness experts.
-                    </p>
+                    </motion.p>
 
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <motion.a
+                    {/* CTA Buttons */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.5 }}
+                      className="flex flex-col sm:flex-row gap-4 justify-center"
+                    >
+                      <MagneticButton
                         href="/booking"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="px-8 py-4 bg-white text-[#3F2965] font-bold rounded-full shadow-xl hover:shadow-2xl transition-shadow"
+                        className="group relative px-8 py-4 bg-white text-[#3F2965] font-bold rounded-full shadow-xl overflow-hidden"
                       >
-                        Book a Session
-                      </motion.a>
-                      <motion.a
+                        {/* Shine effect */}
+                        <motion.span className="absolute inset-0 bg-gradient-to-r from-transparent via-[#Dd1764]/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                        <span className="relative flex items-center gap-2">
+                          Book a Session
+                          <motion.span
+                            animate={{ x: [0, 5, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          >
+                            <ArrowRight className="w-5 h-5" />
+                          </motion.span>
+                        </span>
+                      </MagneticButton>
+
+                      <MagneticButton
                         href="/aboutus"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-bold rounded-full border border-white/30 hover:bg-white/20 transition-colors"
+                        className="group relative px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-bold rounded-full border border-white/30 overflow-hidden hover:bg-white/20 transition-colors"
                       >
-                        Learn About Us
-                      </motion.a>
-                    </div>
+                        <span className="relative flex items-center gap-2">
+                          Learn About Us
+                          <motion.span
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            <Sparkles className="w-5 h-5" />
+                          </motion.span>
+                        </span>
+                      </MagneticButton>
+                    </motion.div>
+
+                    {/* Trust indicators */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.7 }}
+                      className="flex flex-wrap justify-center gap-6 mt-12"
+                    >
+                      {[
+                        { icon: "🔒", text: "100% Confidential" },
+                        { icon: "💜", text: "Evidence-Based" },
+                        { icon: "⭐", text: "Expert Guidance" },
+                      ].map((item, i) => (
+                        <motion.div
+                          key={i}
+                          className="flex items-center gap-2 text-white/70 text-sm"
+                          initial={{ opacity: 0, y: 10 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.8 + i * 0.1 }}
+                          whileHover={{
+                            scale: 1.05,
+                            color: "rgba(255,255,255,0.9)",
+                          }}
+                        >
+                          <motion.span
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              delay: i * 0.3,
+                            }}
+                          >
+                            {item.icon}
+                          </motion.span>
+                          <span>{item.text}</span>
+                        </motion.div>
+                      ))}
+                    </motion.div>
                   </motion.div>
                 </div>
               </section>
 
-              {/* Newsletter Section */}
-              <section className="py-16 bg-gradient-to-b from-white to-[#faf5ff]">
-                <div className="max-w-4xl mx-auto px-6">
+              {/* Newsletter / Social Section */}
+              <section className="py-20 bg-gradient-to-b from-white to-[#faf5ff] relative overflow-hidden">
+                <FloatingParticles />
+
+                <div className="max-w-4xl mx-auto px-6 relative z-10">
                   <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
                     viewport={{ once: true }}
-                    className="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-[#3F2965]/5"
+                    transition={{ type: "spring", stiffness: 50 }}
+                    className="relative"
                   >
-                    <div className="text-center">
-                      <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-r from-[#3F2965]/10 to-[#Dd1764]/10 flex items-center justify-center">
-                        <BookOpen className="w-8 h-8 text-[#Dd1764]" />
-                      </div>
-                      <h3 className="text-2xl md:text-3xl font-serif font-bold text-[#3F2965] mb-4">
-                        Stay Updated with Mental Wellness Tips
-                      </h3>
-                      <p className="text-[#3F2965]/60 mb-8 max-w-lg mx-auto">
-                        Follow us on social media for daily insights, resources,
-                        and support on your wellness journey.
-                      </p>
+                    {/* Glowing background */}
+                    <motion.div
+                      className="absolute -inset-4 bg-gradient-to-r from-[#3F2965]/10 via-[#Dd1764]/10 to-[#3F2965]/10 rounded-[50px] blur-xl"
+                      animate={{ opacity: [0.5, 0.8, 0.5] }}
+                      transition={{ duration: 4, repeat: Infinity }}
+                    />
 
-                      <div className="flex justify-center gap-4">
-                        <motion.a
-                          href="https://www.instagram.com/mindsettlerbypb"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          whileHover={{ scale: 1.1, y: -3 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="w-12 h-12 rounded-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center text-white shadow-lg"
+                    <div className="relative bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-[#3F2965]/5 overflow-hidden">
+                      {/* Decorative gradient line */}
+                      <motion.div
+                        className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3F2965] via-[#Dd1764] to-[#3F2965]"
+                        initial={{ scaleX: 0 }}
+                        whileInView={{ scaleX: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.3, duration: 0.8 }}
+                      />
+
+                      {/* Background decoration */}
+                      <motion.div
+                        className="absolute -top-20 -right-20 w-40 h-40 bg-[#Dd1764]/5 rounded-full blur-3xl"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 6, repeat: Infinity }}
+                      />
+                      <motion.div
+                        className="absolute -bottom-20 -left-20 w-40 h-40 bg-[#3F2965]/5 rounded-full blur-3xl"
+                        animate={{ scale: [1.2, 1, 1.2] }}
+                        transition={{ duration: 6, repeat: Infinity }}
+                      />
+
+                      <div className="text-center relative">
+                        {/* Icon */}
+                        <motion.div
+                          className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-r from-[#3F2965]/10 to-[#Dd1764]/10 flex items-center justify-center"
+                          animate={{
+                            rotate: [0, 5, -5, 0],
+                            scale: [1, 1.05, 1],
+                          }}
+                          transition={{ duration: 4, repeat: Infinity }}
                         >
-                          <svg
-                            className="w-6 h-6"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                          </svg>
-                        </motion.a>
-                        <motion.a
-                          href="https://www.linkedin.com/in/parnika-bajaj-190719195/"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          whileHover={{ scale: 1.1, y: -3 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="w-12 h-12 rounded-full bg-[#0A66C2] flex items-center justify-center text-white shadow-lg"
+                          <BookOpen className="w-8 h-8 text-[#Dd1764]" />
+                        </motion.div>
+
+                        {/* Title */}
+                        <TextReveal>
+                          <h3 className="text-2xl md:text-3xl font-serif font-bold text-[#3F2965] mb-4">
+                            Stay Updated with Mental Wellness Tips
+                          </h3>
+                        </TextReveal>
+
+                        {/* Description */}
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          whileInView={{ opacity: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.3 }}
+                          className="text-[#3F2965]/60 mb-8 max-w-lg mx-auto"
                         >
-                          <svg
-                            className="w-6 h-6"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
+                          Follow us on social media for daily insights,
+                          resources, and support on your wellness journey.
+                        </motion.p>
+
+                        {/* Social Buttons */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.5 }}
+                          className="flex justify-center gap-4"
+                        >
+                          {/* Instagram */}
+                          <motion.a
+                            href="https://www.instagram.com/mindsettlerbypb"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            initial={{ scale: 0, rotate: -180 }}
+                            whileInView={{ scale: 1, rotate: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.6, type: "spring" }}
+                            whileHover={{
+                              scale: 1.15,
+                              y: -5,
+                              rotate: [0, -10, 10, 0],
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center text-white shadow-lg shadow-pink-500/30 relative overflow-hidden group"
+                            data-hover
                           >
-                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                          </svg>
-                        </motion.a>
+                            {/* Shine effect */}
+                            <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                            <svg
+                              className="w-7 h-7 relative z-10"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                            </svg>
+                          </motion.a>
+
+                          {/* LinkedIn */}
+                          <motion.a
+                            href="https://www.linkedin.com/in/parnika-bajaj-190719195/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            initial={{ scale: 0, rotate: 180 }}
+                            whileInView={{ scale: 1, rotate: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.7, type: "spring" }}
+                            whileHover={{
+                              scale: 1.15,
+                              y: -5,
+                              rotate: [0, 10, -10, 0],
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                            className="w-14 h-14 rounded-2xl bg-[#0A66C2] flex items-center justify-center text-white shadow-lg shadow-blue-500/30 relative overflow-hidden group"
+                            data-hover
+                          >
+                            {/* Shine effect */}
+                            <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                            <svg
+                              className="w-7 h-7 relative z-10"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                            </svg>
+                          </motion.a>
+
+                          {/* WhatsApp */}
+                          <motion.a
+                            href="https://wa.me/919974631313"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            initial={{ scale: 0, rotate: -180 }}
+                            whileInView={{ scale: 1, rotate: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.8, type: "spring" }}
+                            whileHover={{
+                              scale: 1.15,
+                              y: -5,
+                              rotate: [0, -10, 10, 0],
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#128C7E] flex items-center justify-center text-white shadow-lg shadow-green-500/30 relative overflow-hidden group"
+                            data-hover
+                          >
+                            {/* Shine effect */}
+                            <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                            <svg
+                              className="w-7 h-7 relative z-10"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                            </svg>
+                          </motion.a>
+                        </motion.div>
+
+                        {/* Additional text */}
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          whileInView={{ opacity: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 1 }}
+                          className="text-xs text-[#3F2965]/40 mt-6"
+                        >
+                          Join our community of{" "}
+                          <span className="font-semibold text-[#Dd1764]">
+                            1,000+
+                          </span>{" "}
+                          wellness seekers
+                        </motion.p>
                       </div>
                     </div>
                   </motion.div>
                 </div>
               </section>
+
+              {/* Saved Articles Indicator (floating) */}
+              <AnimatePresence>
+                {savedArticles.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 100 }}
+                    className="fixed bottom-24 right-6 z-40"
+                  >
+                    <motion.div
+                      className="flex items-center gap-3 px-4 py-3 bg-white rounded-full shadow-xl border border-[#3F2965]/10"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <motion.div
+                        className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3F2965] to-[#Dd1764] flex items-center justify-center"
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <Bookmark className="w-4 h-4 text-white fill-current" />
+                      </motion.div>
+                      <span className="text-sm font-bold text-[#3F2965]">
+                        {savedArticles.length} saved
+                      </span>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Scroll to Top Button */}
+              <AnimatePresence>
+                {showScrollTop && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                    onClick={scrollToTop}
+                    className="fixed bottom-6 right-6 z-50 w-12 h-12 bg-gradient-to-br from-[#3F2965] to-[#Dd1764] text-white rounded-full shadow-xl flex items-center justify-center overflow-hidden group"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    data-hover
+                  >
+                    {/* Ripple effect */}
+                    <motion.div
+                      className="absolute inset-0 rounded-full"
+                      animate={{
+                        boxShadow: [
+                          "0 0 0 0 rgba(221,23,100,0.4)",
+                          "0 0 0 15px rgba(221,23,100,0)",
+                        ],
+                      }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    />
+                    {/* Shine effect */}
+                    <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                    <motion.svg
+                      className="w-5 h-5 relative z-10"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      animate={{ y: [0, -3, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 10l7-7m0 0l7 7m-7-7v18"
+                      />
+                    </motion.svg>
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
+
             <Footer />
           </>
         </IsProfileCompleteUser>
