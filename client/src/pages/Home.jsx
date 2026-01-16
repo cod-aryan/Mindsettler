@@ -15,7 +15,8 @@ function Home() {
     <div className="min-h-screen bg-slate-50 font-sans antialiased">
       <HeroSection />
       <JourneySection />
-      <div class="bg-linear-to-b from-[#fdf2f9] to-[#f0f0f4] h-20"></div>
+      {/* <div class="bg-linear-to-b from-[#fdf2f9] to-[#f0f0f4] h-20"></div> */}
+      <div class="bg-linear-to-b from-[#ffffff] to-[#f0eff4] h-20"></div>
       <MindSettlerSection />
       <StatsSection />
       <FAQ />

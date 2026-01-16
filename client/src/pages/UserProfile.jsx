@@ -471,7 +471,7 @@ const WalletView = ({ user }) => {
                       </span>
                       <span className="flex items-center gap-1 font-mono">
                         <Hash size={10} className="text-[#Dd1764]" />
-                        {txn.referenceId?.toUpperCase().slice(0, 8)}...
+                        {txn.referenceId?.toUpperCase()}
                       </span>
                     </div>
                   </div>
@@ -486,7 +486,7 @@ const WalletView = ({ user }) => {
                       {isRejected || isPending ? "" : (isCredit ? "+" : "-")}₹{txn.amount}
                     </p>
                     <p className="text-[9px] font-mono text-slate-300 hidden sm:block">
-                      {txn.transactionId?.slice(0, 12)}
+                      {txn.transactionId}
                     </p>
                   </div>
                 </div>
@@ -777,7 +777,7 @@ const MyBookingsView = () => {
                 {/* ID Badge */}
                 <div className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 bg-slate-50 rounded-lg">
                   <Hash size={10} className="text-[#Dd1764]" />
-                  <span className="text-[9px] font-mono text-slate-400">{session._id?.slice(-6)}</span>
+                  <span className="text-[9px] font-mono text-slate-400">{session._id.toUpperCase()}</span>
                 </div>
 
                 {/* Status & Type Header */}
