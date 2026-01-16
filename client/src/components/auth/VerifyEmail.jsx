@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { 
   CheckCircle, 
@@ -14,6 +14,7 @@ import API from "../../api/axios";
 
 const VerifyEmail = ({ user, setUser }) => {
   const [searchParams] = useSearchParams();
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const token = searchParams.get("token");
 
@@ -30,6 +31,12 @@ const VerifyEmail = ({ user, setUser }) => {
       setMessage("No verification token provided.");
     }
   }, [token]);
+
+  useEffect(() => {
+    if (user && user.role === "admin") {
+      setIsAdmin(true);
+    }
+  }, [user]);
 
   const verifyToken = async () => {
     try {
@@ -107,7 +114,7 @@ const VerifyEmail = ({ user, setUser }) => {
             </p>
             <div className="space-y-3">
               <button
-                onClick={() => navigate("/profile")}
+                onClick={() => navigate(isAdmin ? "/admin#profile" : "/profile#profile")}
                 className="w-full py-3 bg-gradient-to-r from-[#3F2965] to-[#DD1764] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:opacity-90 transition-all"
               >
                 Go to Profile
@@ -138,7 +145,7 @@ const VerifyEmail = ({ user, setUser }) => {
             </p>
             <div className="space-y-3">
               <button
-                onClick={() => navigate("/profile")}
+                onClick={() => navigate(isAdmin ? "/admin#profile" : "/profile#profile")}
                 className="w-full py-3 bg-gradient-to-r from-[#3F2965] to-[#DD1764] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:opacity-90 transition-all"
               >
                 Go to Profile

@@ -1,5 +1,5 @@
 // components/Guards/IsVerifiedUser.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import {
   X,
@@ -350,6 +350,7 @@ export const IsProfileCompleteUser = ({ user, children, requiredFields = ["name"
   const navigate = useNavigate();
   const location = useLocation();
   const [showPopup] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Check which fields are missing
   const getMissingFields = () => {
@@ -375,9 +376,16 @@ export const IsProfileCompleteUser = ({ user, children, requiredFields = ["name"
     return fieldNames[field] || field.charAt(0).toUpperCase() + field.slice(1);
   };
 
+  // Check user is admin or not
+  useEffect(() => {
+    if (user && user.role === "admin") {
+      setIsAdmin(true);
+    }
+  }, [user]);
+
   // Handle navigation to profile
   const handleGoToProfile = () => {
-    navigate("/profile", { state: { from: location.pathname, edit: true } });
+    navigate(isAdmin ? "/admin#profile" : "/profile#profile", { state: { from: location.pathname, edit: true } });
   };
 
   // Handle go back
