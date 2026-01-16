@@ -108,9 +108,7 @@ const UserProfileView = ({ user, setUser }) => {
             </div>
             <p className="text-white/60 text-sm font-medium mb-4 break-all">{user.email}</p>
             <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-              <span className="px-4 py-1.5 bg-white/10 backdrop-blur-sm text-white text-[10px] font-black uppercase rounded-full tracking-wider border border-white/20 flex items-center gap-1.5">
-                <Star size={12} className="text-yellow-400" /> Premium Member
-              </span>
+              
               <span className="px-4 py-1.5 bg-[#Dd1764]/20 text-[#ff9ec4] text-[10px] font-black uppercase rounded-full tracking-wider border border-[#Dd1764]/30 flex items-center gap-1.5">
                 <Heart size={12} /> Verified
               </span>
@@ -719,13 +717,17 @@ const MyBookingsView = () => {
               <p className="text-3xl font-black">{sessions.filter(s => s.status === "completed").length}</p>
               <p className="text-purple-200 text-xs font-bold uppercase">Completed</p>
             </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/10">
+              <p className="text-3xl font-black">{sessions.filter(s => s.status === "rejected").length}</p>
+              <p className="text-purple-200 text-xs font-bold uppercase">Rejected</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filter Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {["all", "confirmed", "pending", "completed"].map((filter) => (
+        {["all", "confirmed", "pending", "completed", "rejected"].map((filter) => (
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
@@ -916,25 +918,7 @@ const MyBookingsView = () => {
         </div>
       )}
 
-      {/* CTA Banner */}
-      <Link 
-        to="/booking"
-        className="group relative overflow-hidden bg-gradient-to-r from-[#Dd1764] to-[#ff6b9d] p-6 sm:p-8 rounded-3xl text-white shadow-xl hover:shadow-2xl transition-all duration-300 block"
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-              <CalendarPlus size={28} />
-            </div>
-            <div>
-              <h4 className="font-black text-xl">Ready for your next session?</h4>
-              <p className="text-white/80 text-sm">Continue your healing journey with MindSettler</p>
-            </div>
-          </div>
-          <ArrowRight className="hidden sm:block group-hover:translate-x-2 transition-transform" size={24} />
-        </div>
-      </Link>
+      
     </div>
   );
 };
@@ -1259,7 +1243,7 @@ const UserDashboard = () => {
             <div className="hidden lg:flex items-center gap-3 pl-4 border-l border-slate-100">
               <div className="text-right">
                 <p className="text-sm font-bold text-[#3F2965]">{user?.name}</p>
-                <p className="text-[10px] text-slate-400">Premium Member</p>
+                
               </div>
               <div className="relative">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3F2965] to-[#5a3e8c] flex items-center justify-center text-white font-bold shadow-lg">
