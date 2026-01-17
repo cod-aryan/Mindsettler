@@ -43,17 +43,16 @@
 ### 📧 Automated Email Notifications
 * **Booking Confirmation:** Instant professional HTML email sent upon successful booking with session details and Google Calendar integration.
 * **Status Alerts:** Real-time notifications sent via Nodemailer for session **Approvals** or **Rejections**.
-* **Smart Refund Alerts:** If a session is rejected, the user receives an email confirming the automatic wallet credit reversal.
 
-### 📖 Clinical Continuity Tools
-* **Post-Session Insights:** Admins provide revision notes and homework, which appear in the user's "Concluded Sessions" view.
-* **Private Reflection Journal:** A dedicated space for users to record personal breakthroughs, separate from therapist notes.
+### 🤖 Contextual AI Navigation
+* **Intent Recognition:** An integrated chatbot that analyzes user queries to provide immediate support.
+* **Smart Redirection:** Based on the conversation flow, the AI automatically triggers redirects to the **Booking Engine** (for personal therapy) or the **Corporate Portal** (for business inquiries), significantly reducing the user's "time-to-action."
 
 ---
 
 ## 🛠️ Technical Problem Solving
 
-[Image of a sequence diagram showing a client and server exchanging JWT cookies and Cache-Control headers]
+
 
 * **Vercel Cookie Persistence:** Solved the "Cookie not saving" issue on serverless functions by setting `app.set("trust proxy", 1)` and configuring JWT cookies with `SameSite: "None"` and `Secure: true`.
 * **Async Email Dispatch:** Integrated professional HTML templates with `Nodemailer` to handle concurrent user notifications without blocking the main event loop.
@@ -64,7 +63,7 @@
 
 ## 🏗️ Architecture & Data Modeling
 
-[Image of a NoSQL database schema design showing relationships between users, appointments, and wallets]
+
 
 * **Mongoose Referencing:** Utilizes `DocumentReferences` for relational integrity between `Appointments` and `Users`.
 * **Lifecycle Hooks:** Backend triggers automated email controllers specifically during the `.save()` or `.findByIdAndUpdate()` lifecycle of an appointment.
