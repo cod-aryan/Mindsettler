@@ -37,6 +37,7 @@ import {
 import Logo from "../assets/icons/MindsettlerLogo-removebg-preview.png";
 import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { IsLoginUser, IsVerifiedUser } from "../components/auth/Verification";
 
 // --- ANIMATED BACKGROUND COMPONENT ---
 const AnimatedBackground = () => (
@@ -1399,224 +1400,228 @@ const UserDashboard = () => {
   }, [navigate]);
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 font-sans relative">
-      {/* Animated Background */}
-      <AnimatedBackground />
+    <IsLoginUser user={user}>
+      <IsVerifiedUser user={user}>
+      <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 font-sans relative">
+        {/* Animated Background */}
+        <AnimatedBackground />
 
-      {/* Desktop Sidebar - Enhanced */}
-      <aside className="hidden lg:flex w-72 bg-white/80 backdrop-blur-xl border-r border-slate-100/50 flex-col fixed h-full z-20 shadow-xl">
-        {/* Logo Section */}
-        <div className="p-6 border-b border-slate-100/50">
-          <Link
-            to="/"
-            className="block transition-transform hover:scale-105 duration-300"
-          >
-            <img src={Logo} className="w-40" alt="MindSettler" />
-          </Link>
-        </div>
-
-        {/* User Mini Profile */}
-        <div className="p-5 border-b border-slate-100/50">
-          <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-slate-50 to-purple-50/50 rounded-2xl">
-            <div className="relative">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#3F2965] to-[#5a3e8c] flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                {user?.name?.charAt(0) || "U"}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-[#3F2965] text-sm truncate">{user?.name}</p>
-              <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest px-4 mb-3">
-            Main Menu
-          </p>
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.name;
-            return (
-              <a
-                key={item.name}
-                href={`#${encodeURIComponent(item.name)}`}
-                onClick={() => setActiveTab(item.name)}
-                className={`group w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 relative overflow-hidden ${
-                  isActive
-                    ? "bg-gradient-to-r from-[#3F2965] to-[#5a3e8c] text-white shadow-lg shadow-purple-200"
-                    : "text-slate-500 hover:text-[#3F2965] hover:bg-slate-50"
-                }`}
-              >
-                {/* Active Indicator */}
-                {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#Dd1764] rounded-r-full" />
-                )}
-                
-                <div className={`p-2 rounded-lg transition-all duration-300 ${
-                  isActive 
-                    ? "bg-white/20" 
-                    : "bg-slate-100 group-hover:bg-[#3F2965]/10"
-                }`}>
-                  <Icon size={16} className={isActive ? "text-white" : "text-[#3F2965]"} />
-                </div>
-                
-                <span>{item.name}</span>
-                
-                {isActive && (
-                  <ChevronRight className="ml-auto" size={16} />
-                )}
-                
-                {/* Hover Effect */}
-                <div className={`absolute inset-0 bg-gradient-to-r from-[#3F2965]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isActive ? "hidden" : ""}`} />
-              </a>
-            );
-          })}
-        </nav>
-
-        {/* Bottom Section */}
-        <div className="p-4 border-t border-slate-100/50 space-y-2">
-        
-          
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="group w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all duration-300"
-          >
-            <div className="p-2 rounded-lg bg-slate-100 group-hover:bg-red-100 transition-all">
-              <LogOut size={16} />
-            </div>
-            Logout
-          </button>
-        </div>
-
-    
-      </aside>
-
-      {/* Mobile Sidebar */}
-      <MobileSidebar
-        isOpen={isMobileMenuOpen}
-        onClose={() => setIsMobileMenuOpen(false)}
-        menuItems={menuItems}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onLogout={handleLogout}
-      />
-
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative z-10">
-        {/* Header - Enhanced */}
-        <header className="sticky top-0 h-16 sm:h-18 lg:h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100/50 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-20 shadow-sm">
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="lg:hidden p-2.5 hover:bg-slate-100 rounded-xl transition-colors"
-          >
-            <Menu size={22} className="text-[#3F2965]" />
-          </button>
-
-          {/* Page Title with Breadcrumb */}
-          <div className="flex-1 lg:flex-none">
-            <div className="flex items-center gap-2">
-              <div className="hidden lg:flex items-center gap-2 text-xs text-slate-400">
-                <span>Dashboard</span>
-                <ChevronRight size={12} />
-              </div>
-              <h1 className="text-lg sm:text-xl font-black text-[#3F2965] tracking-tight">
-                {activeTab}
-              </h1>
-            </div>
-            <p className="hidden lg:block text-xs text-slate-400 mt-0.5">
-              {activeTab === "Profile" && "Manage your personal information"}
-              {activeTab === "My Wallet" && "View balance and transactions"}
-              {activeTab === "My Bookings" && "Track your therapy sessions"}
-            </p>
-          </div>
-
-          {/* Right Section */}
-          <div className="flex items-center gap-2 sm:gap-4">
-         
-
-            {/* Quick Book Button - Desktop */}
+        {/* Desktop Sidebar - Enhanced */}
+        <aside className="hidden lg:flex w-72 bg-white/80 backdrop-blur-xl border-r border-slate-100/50 flex-col fixed h-full z-20 shadow-xl">
+          {/* Logo Section */}
+          <div className="p-6 border-b border-slate-100/50">
             <Link
-              to="/booking"
-              className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#Dd1764] to-[#ff6b9d] text-white rounded-xl font-bold text-sm shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+              to="/"
+              className="block transition-transform hover:scale-105 duration-300"
             >
-              <CalendarPlus size={16} />
-              <span className="hidden md:inline">Book Session</span>
+              <img src={Logo} className="w-40" alt="MindSettler" />
             </Link>
+          </div>
 
-            {/* Mobile Logo */}
-            <Link to="/" className="lg:hidden">
-              <img src={Logo} className="h-8 w-auto" alt="MindSettler" />
-            </Link>
-
-            {/* User Avatar - Desktop */}
-            <div className="hidden lg:flex items-center gap-3 pl-4 border-l border-slate-100">
-              <div className="text-right">
-                <p className="text-sm font-bold text-[#3F2965]">{user?.name}</p>
-                
-              </div>
+          {/* User Mini Profile */}
+          <div className="p-5 border-b border-slate-100/50">
+            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-slate-50 to-purple-50/50 rounded-2xl">
               <div className="relative">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3F2965] to-[#5a3e8c] flex items-center justify-center text-white font-bold shadow-lg">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#3F2965] to-[#5a3e8c] flex items-center justify-center text-white font-bold text-lg shadow-lg">
                   {user?.name?.charAt(0) || "U"}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-[#3F2965] text-sm truncate">{user?.name}</p>
+                <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
               </div>
             </div>
           </div>
-        </header>
 
-        {/* Content Area */}
-        <div className="flex-1 p-4 sm:p-6 lg:p-8 pb-28 lg:pb-8 overflow-y-auto">
-          <div className="max-w-5xl mx-auto">
-            {/* Tab Content with Animation */}
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {activeTab === "Profile" && (
-                <UserProfileView user={user} setUser={setUser} />
-              )}
-              {activeTab === "My Wallet" && <WalletView user={user} />}
-              {activeTab === "My Bookings" && <MyBookingsView />}
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest px-4 mb-3">
+              Main Menu
+            </p>
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.name;
+              return (
+                <a
+                  key={item.name}
+                  href={`#${encodeURIComponent(item.name)}`}
+                  onClick={() => setActiveTab(item.name)}
+                  className={`group w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 relative overflow-hidden ${
+                    isActive
+                      ? "bg-gradient-to-r from-[#3F2965] to-[#5a3e8c] text-white shadow-lg shadow-purple-200"
+                      : "text-slate-500 hover:text-[#3F2965] hover:bg-slate-50"
+                  }`}
+                >
+                  {/* Active Indicator */}
+                  {isActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#Dd1764] rounded-r-full" />
+                  )}
+                  
+                  <div className={`p-2 rounded-lg transition-all duration-300 ${
+                    isActive 
+                      ? "bg-white/20" 
+                      : "bg-slate-100 group-hover:bg-[#3F2965]/10"
+                  }`}>
+                    <Icon size={16} className={isActive ? "text-white" : "text-[#3F2965]"} />
+                  </div>
+                  
+                  <span>{item.name}</span>
+                  
+                  {isActive && (
+                    <ChevronRight className="ml-auto" size={16} />
+                  )}
+                  
+                  {/* Hover Effect */}
+                  <div className={`absolute inset-0 bg-gradient-to-r from-[#3F2965]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isActive ? "hidden" : ""}`} />
+                </a>
+              );
+            })}
+          </nav>
+
+          {/* Bottom Section */}
+          <div className="p-4 border-t border-slate-100/50 space-y-2">
+          
+            
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="group w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all duration-300"
+            >
+              <div className="p-2 rounded-lg bg-slate-100 group-hover:bg-red-100 transition-all">
+                <LogOut size={16} />
+              </div>
+              Logout
+            </button>
+          </div>
+
+      
+        </aside>
+
+        {/* Mobile Sidebar */}
+        <MobileSidebar
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+          menuItems={menuItems}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onLogout={handleLogout}
+        />
+
+        {/* Main Content */}
+        <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative z-10">
+          {/* Header - Enhanced */}
+          <header className="sticky top-0 h-16 sm:h-18 lg:h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100/50 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-20 shadow-sm">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2.5 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              <Menu size={22} className="text-[#3F2965]" />
+            </button>
+
+            {/* Page Title with Breadcrumb */}
+            <div className="flex-1 lg:flex-none">
+              <div className="flex items-center gap-2">
+                <div className="hidden lg:flex items-center gap-2 text-xs text-slate-400">
+                  <span>Dashboard</span>
+                  <ChevronRight size={12} />
+                </div>
+                <h1 className="text-lg sm:text-xl font-black text-[#3F2965] tracking-tight">
+                  {activeTab}
+                </h1>
+              </div>
+              <p className="hidden lg:block text-xs text-slate-400 mt-0.5">
+                {activeTab === "Profile" && "Manage your personal information"}
+                {activeTab === "My Wallet" && "View balance and transactions"}
+                {activeTab === "My Bookings" && "Track your therapy sessions"}
+              </p>
+            </div>
+
+            {/* Right Section */}
+            <div className="flex items-center gap-2 sm:gap-4">
+          
+
+              {/* Quick Book Button - Desktop */}
+              <Link
+                to="/booking"
+                className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#Dd1764] to-[#ff6b9d] text-white rounded-xl font-bold text-sm shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+              >
+                <CalendarPlus size={16} />
+                <span className="hidden md:inline">Book Session</span>
+              </Link>
+
+              {/* Mobile Logo */}
+              <Link to="/" className="lg:hidden">
+                <img src={Logo} className="h-8 w-auto" alt="MindSettler" />
+              </Link>
+
+              {/* User Avatar - Desktop */}
+              <div className="hidden lg:flex items-center gap-3 pl-4 border-l border-slate-100">
+                <div className="text-right">
+                  <p className="text-sm font-bold text-[#3F2965]">{user?.name}</p>
+                  
+                </div>
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3F2965] to-[#5a3e8c] flex items-center justify-center text-white font-bold shadow-lg">
+                    {user?.name?.charAt(0) || "U"}
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Content Area */}
+          <div className="flex-1 p-4 sm:p-6 lg:p-8 pb-28 lg:pb-8 overflow-y-auto">
+            <div className="max-w-5xl mx-auto">
+              {/* Tab Content with Animation */}
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {activeTab === "Profile" && (
+                  <UserProfileView user={user} setUser={setUser} />
+                )}
+                {activeTab === "My Wallet" && <WalletView user={user} />}
+                {activeTab === "My Bookings" && <MyBookingsView />}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer - Desktop Only */}
-        <footer className="hidden lg:flex items-center justify-between px-8 py-4 border-t border-slate-100/50 bg-white/50 backdrop-blur-sm">
-          <p className="text-xs text-slate-400">
-            © 2024 MindSettler. All rights reserved.
-          </p>
-          <div className="flex items-center gap-4">
-            <a href="#" className="text-xs text-slate-400 hover:text-[#3F2965] transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="text-xs text-slate-400 hover:text-[#3F2965] transition-colors">
-              Terms of Service
-            </a>
-            <a href="#" className="text-xs text-slate-400 hover:text-[#3F2965] transition-colors">
-              Help Center
-            </a>
-          </div>
-        </footer>
-      </main>
+          {/* Footer - Desktop Only */}
+          <footer className="hidden lg:flex items-center justify-between px-8 py-4 border-t border-slate-100/50 bg-white/50 backdrop-blur-sm">
+            <p className="text-xs text-slate-400">
+              © 2024 MindSettler. All rights reserved.
+            </p>
+            <div className="flex items-center gap-4">
+              <a href="#" className="text-xs text-slate-400 hover:text-[#3F2965] transition-colors">
+                Privacy Policy
+              </a>
+              <a href="#" className="text-xs text-slate-400 hover:text-[#3F2965] transition-colors">
+                Terms of Service
+              </a>
+              <a href="#" className="text-xs text-slate-400 hover:text-[#3F2965] transition-colors">
+                Help Center
+              </a>
+            </div>
+          </footer>
+        </main>
 
-      {/* Bottom Navigation for Mobile */}
-      <BottomNavigation
-        menuItems={menuItems}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-      />
+        {/* Bottom Navigation for Mobile */}
+        <BottomNavigation
+          menuItems={menuItems}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
 
-      {/* Floating Action Button - Mobile */}
-      <Link
-        to="/booking"
-        className="fixed bottom-24 right-4 lg:hidden w-14 h-14 bg-gradient-to-r from-[#Dd1764] to-[#ff6b9d] rounded-full flex items-center justify-center text-white shadow-2xl shadow-pink-300 hover:scale-110 transition-all duration-300 z-30"
-      >
-        <Plus size={24} />
-      </Link>
-    </div>
+        {/* Floating Action Button - Mobile */}
+        <Link
+          to="/booking"
+          className="fixed bottom-24 right-4 lg:hidden w-14 h-14 bg-gradient-to-r from-[#Dd1764] to-[#ff6b9d] rounded-full flex items-center justify-center text-white shadow-2xl shadow-pink-300 hover:scale-110 transition-all duration-300 z-30"
+        >
+          <Plus size={24} />
+        </Link>
+      </div>
+      </IsVerifiedUser>
+    </IsLoginUser>
   );
 };
 
