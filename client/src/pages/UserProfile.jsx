@@ -570,7 +570,7 @@ const WalletView = ({ user }) => {
           onClick={handleClosePopup}
         >
           <div
-            className="bg-white w-full sm:max-w-lg rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto"
+            className="bg-white w-full sm:max-w-lg rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] sm:max-h-[95vh] overflow-y-auto mb-16 sm:mb-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
