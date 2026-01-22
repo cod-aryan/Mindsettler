@@ -41,6 +41,7 @@ const getSession = (chatId) => {
 router.post("/", async (req, res) => {
   const { message, chatId, user } = req.body;
   const userName = user?.name?.split(" ")[0] || "Friend";
+  console.log(userName);
   const userId = user?._id;
 
   // Validate input

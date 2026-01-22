@@ -422,7 +422,7 @@ const ChatWidget = ({ user }) => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
     }
-  }, [history, loading, isRedirecting]);
+  }, [history, loading, isRedirecting, isOpen]);
 
   // Lock body scroll on mobile
   useEffect(() => {
